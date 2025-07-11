@@ -10,8 +10,8 @@
 //  Make it harder to accidentally flick dismiss a log card while scrolling.
 //  Add a ? button on the chart to explain that the red area is a depth of less than 200 meters,
 //   and that the gridlines are spaced 10 degrees apart.
-//  Restore auto logging functionality.
-//  Split barometer and gps handling.
+//  Restore auto logging functionality. Maybe need JobScheduler and WorkManager or a foreground
+//   process. 30min for barometer update but when out of focus have gps add to trip every 5min.
 
 package com.bsi.breezeplot
 
@@ -74,14 +74,15 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.bsi.breezeplot.system_handlers.BarometerViewModel
 import com.bsi.breezeplot.system_handlers.GpsViewModel
 import com.bsi.breezeplot.system_handlers.LogEntry
 import com.bsi.breezeplot.system_handlers.LogViewModel
-import com.bsi.breezeplot.ui.components.SwipeItem
-import com.bsi.breezeplot.ui.components.PinDialog
-import com.bsi.breezeplot.ui.components.ConfirmationDialog
-import com.bsi.breezeplot.ui.components.TitleCard
 import com.bsi.breezeplot.ui.components.ButtonCard
+import com.bsi.breezeplot.ui.components.ConfirmationDialog
+import com.bsi.breezeplot.ui.components.PinDialog
+import com.bsi.breezeplot.ui.components.SwipeItem
+import com.bsi.breezeplot.ui.components.TitleCard
 import com.bsi.breezeplot.ui.graphics.wavyFill
 import com.bsi.breezeplot.ui.graphics.wavyLines
 import com.bsi.breezeplot.ui.theme.BreezePlotTheme
@@ -106,13 +107,14 @@ import org.ramani.compose.MapLibre
 import org.ramani.compose.MapProperties
 import org.ramani.compose.Polyline
 import org.ramani.compose.UiSettings
+import java.time.Duration
+import java.time.Instant
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
-val SHORT_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 val DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
 
 object AppDestinations {
@@ -123,7 +125,17 @@ object AppDestinations {
 
 class MainActivity : ComponentActivity() {
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private lateinit var locationCallback: LocationCallback
+    private lateinit var gpsViewModel: GpsViewModel
+    private lateinit var barometerViewModel: BarometerViewModel
+    private var locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            super.onLocationResult(locationResult)
+            val location = locationResult.lastLocation
+            if (location != null) {
+                gpsViewModel.updateLocation(location)
+            }
+        }
+    }
     private val locationRequest =
         LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000).apply {
             setMinUpdateIntervalMillis(5000)
@@ -134,31 +146,22 @@ class MainActivity : ComponentActivity() {
             if (isGranted) {
                 startLocationUpdates()
             } else {
-                Toast.makeText(this, "This app requires location permission", Toast.LENGTH_SHORT)
+                Toast.makeText(this, "Precise location permission is required", Toast.LENGTH_SHORT)
                     .show()
             }
         }
-    private lateinit var gpsViewModel: GpsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         gpsViewModel = GpsViewModel(application)
+        barometerViewModel = BarometerViewModel(application)
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
 
             // Have locationCallback definition here so it can access gpsViewModel
             LaunchedEffect(Unit) {
-                locationCallback = object : LocationCallback() {
-                    override fun onLocationResult(locationResult: LocationResult) {
-                        super.onLocationResult(locationResult)
-                        val location = locationResult.lastLocation
-                        if (location != null) {
-                            gpsViewModel.updateLocation(location)
-                        }
-                    }
-                }
                 startLocationUpdates()
             }
             LaunchedEffect(Unit) {
@@ -173,7 +176,11 @@ class MainActivity : ComponentActivity() {
                     startDestination = AppDestinations.DASHBOARD_ROUTE
                 ) {
                     composable(AppDestinations.DASHBOARD_ROUTE) {
-                        DisplayDashboard(gpsViewModel = gpsViewModel, navController = navController)
+                        DisplayDashboard(
+                            navController = navController,
+                            gpsViewModel = gpsViewModel,
+                            barometerViewModel = barometerViewModel
+                        )
                     }
                     composable(AppDestinations.LOG_ROUTE) { DisplayLog(gpsViewModel = gpsViewModel) }
                     composable(AppDestinations.CHART_ROUTE) { DisplayChart(gpsViewModel = gpsViewModel) }
@@ -185,7 +192,7 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         gpsViewModel.saveTripData()
-        gpsViewModel.savePressureHistory()
+        barometerViewModel.savePressureReadingHistory()
     }
 
     private fun startLocationUpdates() {
@@ -206,19 +213,21 @@ class MainActivity : ComponentActivity() {
 fun DisplayDashboard(
     navController: NavController,
     gpsViewModel: GpsViewModel = viewModel(),
+    barometerViewModel: BarometerViewModel = viewModel()
 ) {
-    // GPS
+    // Data
     val systemUTC by gpsViewModel.systemUtcTime.collectAsState()
     val speed by gpsViewModel.speed.collectAsState()
     val heading by gpsViewModel.bearing.collectAsState()
     val latitude by gpsViewModel.latitude.collectAsState()
     val longitude by gpsViewModel.longitude.collectAsState()
     val hasGpsAccuracy by gpsViewModel.hasGpsAccuracy.collectAsState()
-    val trip by gpsViewModel.distance.collectAsState()
-    val hasBarometer by gpsViewModel.hasBarometer.collectAsState()
-    val hasBarometerAccuracy by gpsViewModel.hasBarometerAccuracy.collectAsState()
-    val currentPressure by gpsViewModel.currentPressure.collectAsState()
-    val pressureHistory by gpsViewModel.pressureHistory.collectAsState()
+    val hasClusterAccuracy by gpsViewModel.hasClusterAccuracy.collectAsState()
+    val trip by gpsViewModel.tripDistance.collectAsState()
+    val hasBarometer by barometerViewModel.hasBarometer.collectAsState()
+    val hasBarometerAccuracy by barometerViewModel.hasBarometerAccuracy.collectAsState()
+    val currentPressure by barometerViewModel.currentPressure.collectAsState()
+    val pressureHistory by barometerViewModel.pressureHistory.collectAsState()
     // Misc
     val locale = Locale.getDefault()
     val dateColor = MaterialTheme.colorScheme.secondary
@@ -265,9 +274,10 @@ fun DisplayDashboard(
         { showBarometerDialog.value = true },
         { showTripDialog.value = true },
         hasGpsAccuracy,
-        chronometerDisplay,
+        hasClusterAccuracy,
         hasBarometer,
         hasBarometerAccuracy,
+        chronometerDisplay,
         pressureDisplay,
         speedDisplay,
         headingDisplay,
@@ -276,24 +286,34 @@ fun DisplayDashboard(
     )
     // Dialog boxes
     if (showBarometerDialog.value) {
-        val itemsToDisplay = pressureHistory.map { (instant, pressure) ->
-            val timeString = SHORT_TIME_FORMAT.withZone(ZoneOffset.UTC).format(instant)
+        val now = Instant.now()
+        val tooLate = Duration.ofHours(barometerViewModel.tooLateHours)
+        val itemsToDisplay = pressureHistory.filter { (instant, _) ->
+            Duration.between(instant, now) < tooLate
+        }.map { (instant, pressure) ->
+            //val timeString = SHORT_TIME_FORMAT.withZone(ZoneOffset.UTC).format(instant)
+            val age = Duration.between(instant, now)
+            val hours = age.toHours()
+            val minutes = age.minusHours(hours).toMinutes()
+            val timeString = "-${hours}h ${minutes}m"
             val pressureString = "%.1fmb".format(pressure)
 
             timeString to pressureString
         }.toMutableList().apply {
-            while (size < gpsViewModel.maxHistoryItems) {
+            while (size < barometerViewModel.maxHistoryItems) {
                 add("" to "")
             }
         }
-
         PinDialog(
             items = itemsToDisplay,
             onConfirm = { showBarometerDialog.value = false },
             onDismiss = { showBarometerDialog.value = false },
-            onAction = { gpsViewModel.addPressureReadingToHistory(currentPressure)
-                showBarometerDialog.value = false},
-            actionButtonText = "Add entry")
+            onAction = {
+                barometerViewModel.addPressureReadingToHistory(currentPressure)
+                showBarometerDialog.value = false
+            },
+            actionButtonText = "Add entry"
+        )
     } else if (showTripDialog.value) {
         ConfirmationDialog(
             dialogText = "Are you sure you want to reset trip distance?",
@@ -311,9 +331,10 @@ fun RenderDashboard(
     onPressBarometer: () -> Unit = {},
     onPressTripMeter: () -> Unit = {},
     hasGpsAccuracy: Boolean = true,
-    chronometer: AnnotatedString = AnnotatedString("06-07-2025\n17:08:52"),
+    hasClusterAccuracy: Boolean = true,
     hasBarometer: Boolean = true,
     hasBarometerAccuracy: Boolean = true,
+    chronometer: AnnotatedString = AnnotatedString("06-07-2025\n17:08:52"),
     barometer: AnnotatedString = AnnotatedString("1035"),
     speed: AnnotatedString = AnnotatedString("11.3"),
     heading: String = "192.3",
@@ -323,6 +344,7 @@ fun RenderDashboard(
     val pad = 12.dp
     val gpsDataColor =
         if (hasGpsAccuracy) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+    val clusterDataColor = if (hasClusterAccuracy) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
     val barometerDataColor =
         if (hasBarometerAccuracy) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
 
@@ -366,13 +388,13 @@ fun RenderDashboard(
                             "Speed",
                             speed,
                             modifier = Modifier.weight(1.0f),
-                            dataColor = gpsDataColor
+                            dataColor = clusterDataColor
                         )
                         TitleCard(
                             "Heading",
                             heading,
                             modifier = Modifier.weight(1.0f),
-                            dataColor = gpsDataColor
+                            dataColor = clusterDataColor
                         )
                     }
                     TitleCard("Coordinates", coordinates, dataColor = gpsDataColor)
@@ -414,8 +436,7 @@ fun DisplayLog(gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewMo
     val context = LocalContext.current
     val coroutineScope: CoroutineScope = rememberCoroutineScope()
     val logbookExportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("text/csv"), // MIME type for CSV
-        onResult = { uri: Uri? ->
+        contract = ActivityResultContracts.CreateDocument("text/csv"), onResult = { uri: Uri? ->
             uri?.let { fileUri ->
                 coroutineScope.launch {
                     val csvData = logViewModel.logToCSV()
@@ -435,11 +456,6 @@ fun DisplayLog(gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewMo
                 }
             }
         })
-    val launchExportLogbook = {
-        val date = ZonedDateTime.now(ZoneOffset.UTC).format(DATE_FORMAT)
-
-        logbookExportLauncher.launch("logbook_${date}.csv")
-    }
 
     RenderLog(
         { showExportDialog.value = true },
@@ -458,8 +474,10 @@ fun DisplayLog(gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewMo
             onDismiss = { showClearDialog.value = false })
     } else if (showExportDialog.value) {
         ConfirmationDialog(dialogText = "Export logbook as CSV?", onConfirm = {
+            val date = ZonedDateTime.now(ZoneOffset.UTC).format(DATE_FORMAT)
+
             showExportDialog.value = false
-            launchExportLogbook()
+            logbookExportLauncher.launch("logbook_${date}.csv")
         }, onDismiss = { showExportDialog.value = false })
     }
 }
@@ -592,6 +610,8 @@ fun DisplayChart(
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(Modifier.systemBarsPadding()) {
+            // MapLibre requires ACCESS_NETWORK_STATE because of ConnectivityReceiver.java
+            // Even if no network features are used removing it from manifest will crash to desktop
             MapLibre(
                 modifier = Modifier.fillMaxSize(),
                 styleBuilder = Style.Builder().fromUri("asset://map_layers.json"),
