@@ -1,0 +1,165 @@
+{
+  "version": 8,
+  "sources": {
+    "land": {
+      "type": "geojson",
+      "data": "asset://ne_10m_simplified/ne_10m_land.json"
+    },
+    "minor_islands": {
+      "type": "geojson",
+      "data": "asset://ne_10m_simplified/ne_10m_minor_islands.json"
+    },
+    "rivers": {
+      "type": "geojson",
+      "data": "asset://ne_10m_simplified/ne_10m_rivers_lake_centerlines.json"
+    },
+    "lakes": {
+      "type": "geojson",
+      "data": "asset://ne_10m_simplified/ne_10m_lakes.json"
+    },
+    "lakes-na": {
+      "type": "geojson",
+      "data": "asset://ne_10m_simplified/ne_10m_lakes_north_america.json"
+    },
+    "lakes-eu": {
+      "type": "geojson",
+      "data": "asset://ne_10m_simplified/ne_10m_lakes_europe.json"
+    },
+    "lakes-au": {
+      "type": "geojson",
+      "data": "asset://ne_10m_simplified/ne_10m_lakes_australia.json"
+    },
+    "bathymetry": {
+      "type": "geojson",
+      "data": "asset://ne_10m_simplified/ne_10m_bathymetry_K_200.json"
+    },
+    "graticules": {
+      "type": "geojson",
+      "data": "asset://ne_10m_simplified/ne_10m_graticules_10.json"
+    },
+    "equator_prime": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": { "name": "Equator" },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [-180, 0],
+                [180, 0]
+              ]
+            }
+          },
+          {
+            "type": "Feature",
+            "properties": { "name": "Prime Meridian" },
+            "geometry": {
+              "type": "LineString",
+              "coordinates": [
+                [0, -90],
+                [0, 90]
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#5092a9"
+      }
+    },
+    {
+      "id": "land-fill",
+      "type": "fill",
+      "source": "land",
+      "paint": {
+        "fill-color": "#152838"
+      }
+    },
+    {
+      "id": "minor_islands-fill",
+      "type": "fill",
+      "source": "minor_islands",
+      "paint": {
+        "fill-color": "#152838"
+      }
+    },
+    {
+      "id": "rivers-line",
+      "type": "line",
+      "source": "rivers",
+      "paint": {
+        "line-color": "#214159",
+        "line-width": 0.5
+      }
+    },
+    {
+      "id": "lakes-fill",
+      "type": "fill",
+      "source": "lakes",
+      "paint": {
+        "fill-color": "#214159"
+      }
+    },
+    {
+      "id": "lakes-na-fill",
+      "type": "fill",
+      "source": "lakes-na",
+      "paint": {
+        "fill-color": "#214159"
+      }
+    },
+    {
+      "id": "lakes-eu-fill",
+      "type": "fill",
+      "source": "lakes-eu",
+      "paint": {
+        "fill-color": "#214159"
+      }
+    },
+    {
+      "id": "lakes-au-fill",
+      "type": "fill",
+      "source": "lakes-au",
+      "paint": {
+        "fill-color": "#214159"
+      }
+    },
+    {
+      "id": "bathymetry-fill",
+      "type": "fill",
+      "source": "bathymetry",
+      "paint": {
+        "fill-color": "#3d8cba"
+      }
+    },
+    {
+      "id": "graticules-line",
+      "type": "line",
+      "source": "graticules",
+      "paint": {
+        "line-color": "#ffc40f",
+        "line-width": 0.25,
+        "line-opacity": 0.75
+      }
+    },
+    {
+      "id": "equator-prime-line",
+      "type": "line",
+      "source": "equator_prime",
+      "paint": {
+        "line-color": "#ffc40f",
+        "line-width": 0.75,
+        "line-opacity": 0.75
+      }
+    }
+  ]
+}

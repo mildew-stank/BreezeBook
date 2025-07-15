@@ -1,4 +1,4 @@
-package com.bsi.breezeplot.system_handlers
+package com.bsi.breezeplot.viewmodels
 
 import android.app.Application
 import android.content.Context
@@ -13,6 +13,7 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.bsi.breezeplot.dataStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -74,20 +75,6 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
             _pressureHistory.value = list
         }
     }
-
-    //private fun startPeriodicLogging() {
-    //    if (!_hasBarometer.value || loggingJob?.isActive == true) return
-    //    loggingJob = scope.launch {
-    //        // initial log
-    //        while (_currentPressure.value == 0f && isActive) delay(1000L)
-    //        addPressureReadingToHistory(_currentPressure.value)
-    //        // periodic
-    //        while (isActive) {
-    //            delay(1000L * 60 * 30)
-    //            addPressureReadingToHistory(_currentPressure.value)
-    //        }
-    //    }
-    //}
 
     fun addPressureReadingToHistory(pressure: Float) {
         val list = _pressureHistory.value.toMutableList()

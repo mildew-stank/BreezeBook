@@ -31,7 +31,7 @@ fun VerticalDivider(
 fun HorizontalDivider(
     modifier: Modifier = Modifier,
     thickness: Dp = 2.dp,
-    color: Color = MaterialTheme.colorScheme.onBackground
+    color: Color = MaterialTheme.colorScheme.outline
 ) {
     Box(
         modifier

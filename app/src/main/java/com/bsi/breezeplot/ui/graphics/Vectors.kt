@@ -1,13 +1,86 @@
 package com.bsi.breezeplot.ui.graphics
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType.Companion.NonZero
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap.Companion.Round
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.PathBuilder
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
+
+private fun PathBuilder.drawWavyLine(startY: Float) {
+    moveToRelative(0.0f, startY)
+    curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
+    curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
+    curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
+    curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
+    curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
+    curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
+    reflectiveCurveToRelative(25.4f, -16.93f, 33.87f, -16.93f)
+    curveToRelative(8.47f, 0.0f, 18.63f, 16.6f, 33.87f, 16.93f)
+}
+
+fun generateWavyLines(numberOfLines: Int = 3): ImageVector {
+    val viewportHeight = 25.4f+(33.87f*(numberOfLines-1))+8.46f
+    val defaultHeight = 128.dp * numberOfLines
+    val validNumberOfLines = numberOfLines.coerceAtLeast(1)
+    val yCoordinates = mutableListOf<Float>()
+    var currentY = (validNumberOfLines - 1) * 33.87f + 25.4f
+
+    if (validNumberOfLines > 0) {
+        for (i in 0 until validNumberOfLines) {
+            yCoordinates.add(currentY)
+            currentY -= 33.87f
+        }
+    }
+    return ImageVector.Builder(
+        name = "WavyLines",
+        defaultWidth = 1024.dp,
+        defaultHeight = defaultHeight,
+        viewportWidth = 270.93f,
+        viewportHeight = viewportHeight
+    ).apply {
+        yCoordinates.forEach { y ->
+            path(
+                fill = SolidColor(Color.Transparent),
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 1f,
+                strokeLineCap = Round,
+                strokeLineJoin = StrokeJoin.Companion.Round,
+                strokeLineMiter = 4.0f,
+                pathFillType = NonZero
+            ) {
+                drawWavyLine(y)
+            }
+        }
+    }.build()
+}
+
+val wavyLines3 = ImageVector.Builder( // TODO: see if this works as a replacement
+    name = "WavyLines",
+    defaultWidth = 1024.dp,
+    defaultHeight = 384.dp,
+    viewportWidth = 270.93f,
+    viewportHeight = 101.6f
+).apply {
+    val yCoordinates = listOf(93.14f, 59.27f, 25.4f)
+    yCoordinates.forEach { y ->
+        path(
+            fill = SolidColor(Color.Transparent),
+            stroke = SolidColor(Color.Black),
+            strokeLineWidth = 1f,
+            strokeLineCap = Round,
+            strokeLineJoin = StrokeJoin.Companion.Round,
+            strokeLineMiter = 4.0f,
+            pathFillType = NonZero
+        ) {
+            drawWavyLine(y)
+        }
+    }
+}.build()
 
 val wavyLines = ImageVector.Builder(
     name = "WavyLines",
@@ -75,39 +148,33 @@ val wavyLines = ImageVector.Builder(
     }
 }.build()
 
-val wavyFill = ImageVector.Builder(
-    name = "WavyFill",
-    defaultWidth = 1024.0.dp,
-    defaultHeight = 384.0.dp,
+val wavyLinesExtended = ImageVector.Builder(
+    name = "WavyLinesExtended",
+    defaultWidth = 1024.dp,
+    defaultHeight = 640.07.dp,
     viewportWidth = 270.93f,
-    viewportHeight = 101.6f
+    viewportHeight = 169.35f
 ).apply {
-    path(
-        fill = SolidColor(Color(0xff254151)), pathFillType = NonZero
-    ) {
-        moveTo(0.0f, 93.14f)
-        lineTo(270.93f, 93.14f)
-        lineTo(270.93f, 101.6f)
-        lineTo(0.0f, 101.6f)
-        close()
-    }
-    path(
-        fill = SolidColor(Color(0xff254151)),
-        stroke = SolidColor(Color(0xff77b6b1)),
-        strokeLineWidth = 1f,
-        strokeLineCap = Round,
-        strokeLineJoin = StrokeJoin.Companion.Round,
-        strokeLineMiter = 4.0f,
-        pathFillType = NonZero
-    ) {
-        moveToRelative(0.0f, 93.14f)
-        curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
-        curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
-        curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
-        curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
-        curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
-        curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
-        reflectiveCurveToRelative(25.4f, -16.93f, 33.87f, -16.93f)
-        curveToRelative(8.47f, 0.0f, 18.63f, 16.6f, 33.87f, 16.93f)
+    // Original three lines
+    listOf(160.88f, 127.01f, 93.14f, 59.27f, 25.4f).forEach { y ->
+        path(
+            fill = SolidColor(Color(0x00000000)),
+            stroke = SolidColor(Color(0xFF000000)),
+            strokeLineWidth = 1f,
+            strokeLineCap = Round,
+            strokeLineJoin = StrokeJoin.Companion.Round,
+            strokeLineMiter = 4.0f,
+            pathFillType = NonZero
+        ) {
+            moveToRelative(0.0f, y)
+            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
+            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
+            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
+            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
+            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
+            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
+            reflectiveCurveToRelative(25.4f, -16.93f, 33.87f, -16.93f)
+            curveToRelative(8.47f, 0.0f, 18.63f, 16.6f, 33.87f, 16.93f)
+        }
     }
 }.build()

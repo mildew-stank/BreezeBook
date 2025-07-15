@@ -1,59 +1,78 @@
 package com.bsi.breezeplot.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.bsi.breezeplot.viewmodels.AppTheme
 
-private val DarkColorScheme = darkColorScheme(
+private val CalmWaterColorScheme = darkColorScheme(
     primary = OrangePrimary, // big text
     secondary = OrangeSecondary, // medium text
-    tertiary = LightBlue, // title text
-    background = DarkBlue,
+    tertiary = OrangeTertiary, // map pin lines
+    onSurface = LightBlue,
     surface = MediumBlue,
-    onBackground = LightBlue // line borders
+    onBackground = LightBlue, // line borders
+    background = DarkBlue,
+    outline = LightBlue
 )
 
-// TODO: rename to DefaultScheme
-private val LightColorScheme = lightColorScheme(
-    primary = OrangePrimary, // big text
-    secondary = OrangeSecondary, // medium text
-    tertiary = LightBlue, // title text
-    background = DarkBlue,
-    surface = MediumBlue,
-    onBackground = LightBlue // line borders
+private val HighTideColorScheme = darkColorScheme(
+    primary = Yellow500,
+    secondary = Yellow500A75,
+    tertiary = Yellow700,
+    onSurface = Blue300,
+    surface = Blue900,
+    onBackground = Blue500,
+    background = Blue950,
+    outline = Blue700
+)
+
+private val DarkNightColorScheme = darkColorScheme(
+    primary = Monochrome0,
+    secondary = Monochrome50,
+    tertiary = Monochrome100,
+    onSurface = Monochrome300,
+    surface = Monochrome900,
+    onBackground = Monochrome500,
+    background = Monochrome950,
+    outline = Monochrome700
 )
 
 @Composable
 fun BreezePlotTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    theme: AppTheme = AppTheme.CALM_WATER,
     content: @Composable () -> Unit
 ) {
     val view = LocalView.current
-    val colorScheme = when {
-        // TODO: allow dynamicColor as an option but as default. it generates colors from wallpaper
-        //dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-        //    val context = LocalContext.current
-        //    if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val colorScheme = when (theme) {
+        AppTheme.CALM_WATER -> CalmWaterColorScheme
+        AppTheme.HIGH_TIDE -> HighTideColorScheme
+        AppTheme.DARK_NIGHT -> DarkNightColorScheme
+        //AppTheme.DYNAMIC -> {
+        //    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !view.isInEditMode) {
+        //        if (isSystemInDarkTheme()) dynamicDarkColorScheme(LocalContext.current)
+        //        else dynamicLightColorScheme(LocalContext.current)
+        //    } else {
+        //        DefaultColorScheme
+        //    }
         //}
-        darkTheme -> LightColorScheme // TODO: change this when adding various themes
-        else -> LightColorScheme
+    }
+    val isLightTheme = when(theme) {
+        AppTheme.CALM_WATER -> false
+        AppTheme.HIGH_TIDE -> false
+        AppTheme.DARK_NIGHT -> false
+        //AppTheme.DYNAMIC -> !isSystemInDarkTheme()
     }
 
-    if (!view.isInEditMode) { // Prevents SideEffect from breaking previews i guess
+    if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             val insetsController = WindowCompat.getInsetsController(window, view)
-
-            // Make status bar icons adapt to the theme (light/dark)
-            insetsController.isAppearanceLightStatusBars = false //!darkTheme
+            insetsController.isAppearanceLightStatusBars = isLightTheme
         }
     }
     MaterialTheme(

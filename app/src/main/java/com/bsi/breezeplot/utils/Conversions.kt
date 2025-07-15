@@ -1,5 +1,7 @@
 package com.bsi.breezeplot.utils
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.round
@@ -36,4 +38,11 @@ fun speedToKnots(speed: Float): Float {
  */
 fun distanceToNauticalMiles(distance: Float): Float {
     return distance * 0.000539957f
+}
+
+/**
+ * Converts a Jetpack Compose Color to a hexadecimal string representation in "#RRGGBB" format.
+ */
+fun Color.toRgbHexString(): String {
+    return String.format(Locale.ROOT, "#%06X", (this.toArgb() and 0xFFFFFF))
 }

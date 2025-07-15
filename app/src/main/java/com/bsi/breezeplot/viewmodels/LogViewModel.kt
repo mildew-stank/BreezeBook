@@ -1,4 +1,4 @@
-package com.bsi.breezeplot.system_handlers
+package com.bsi.breezeplot.viewmodels
 
 import android.app.Application
 import android.content.Context
@@ -68,31 +68,29 @@ class LogRepository(private val logEntryDao: LogEntryDao) {
     suspend fun insert(logEntry: LogEntry) {
         logEntryDao.insertLogEntry(logEntry)
     }
+
     suspend fun delete(logEntry: LogEntry) {
         logEntryDao.deleteLogEntry(logEntry)
     }
+
     suspend fun clearAll() {
         logEntryDao.clearAllLogEntries()
     }
 }
 
-@Database(entities = [LogEntry::class], version = 1, exportSchema = false) // Increment version on schema changes
+@Database(entities = [LogEntry::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun logEntryDao(): LogEntryDao
 
     companion object {
-        @Volatile // Ensures visibility of INSTANCE across threads
+        @Volatile
         private var INSTANCE: AppDatabase? = null
 
         fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) { // synchronized block for thread safety
+            return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "log_database"
-                )
-                    .fallbackToDestructiveMigration(true)
-                    .build()
+                    context.applicationContext, AppDatabase::class.java, "log_database"
+                ).fallbackToDestructiveMigration(true).build()
                 INSTANCE = instance
                 instance
             }
@@ -107,12 +105,11 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
     init {
         val logEntryDao = AppDatabase.getDatabase(application).logEntryDao()
         logRepository = LogRepository(logEntryDao)
-        persistedLogEntries = logRepository.allLogEntries
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5000), // Keep subscribed for 5s after last collector
-                initialValue = emptyList()
-            )
+        persistedLogEntries = logRepository.allLogEntries.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000), // Keep subscribed for 5s after last collector
+            initialValue = emptyList()
+        )
     }
 
     fun addLogEntry(
@@ -146,6 +143,15 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
     fun clearAllLogs() {
         viewModelScope.launch(Dispatchers.IO) {
             logRepository.clearAll()
+        }
+    }
+
+    suspend fun exportLogbook(context: Context, uri: Uri): Boolean {
+        val csvData = logToCSV()
+        return if (csvData.isNotEmpty()) {
+            tryWriteCsvToUri(uri, csvData, context)
+        } else {
+            false
         }
     }
 

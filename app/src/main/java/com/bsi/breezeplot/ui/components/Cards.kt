@@ -33,7 +33,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.bsi.breezeplot.system_handlers.LogEntry
+import com.bsi.breezeplot.viewmodels.LogEntry
 import com.bsi.breezeplot.utils.distanceToNauticalMiles
 import com.bsi.breezeplot.utils.doubleToDMS
 import com.bsi.breezeplot.utils.speedToKnots
@@ -44,9 +44,9 @@ fun TitleCard(
     title: String,
     data: String,
     modifier: Modifier = Modifier,
-    borderColor: Color = MaterialTheme.colorScheme.onBackground,
+    borderColor: Color = MaterialTheme.colorScheme.outline,
     titleBackgroundColor: Color = MaterialTheme.colorScheme.background,
-    titleTextColor: Color = MaterialTheme.colorScheme.tertiary,
+    titleTextColor: Color = MaterialTheme.colorScheme.onBackground,
     dataColor: Color = MaterialTheme.colorScheme.primary,
     dataStyle: TextStyle = MaterialTheme.typography.bodyMedium,
 ) {
@@ -67,9 +67,9 @@ fun TitleCard(
     title: String,
     data: AnnotatedString,
     modifier: Modifier = Modifier,
-    borderColor: Color = MaterialTheme.colorScheme.onBackground,
+    borderColor: Color = MaterialTheme.colorScheme.outline,
     titleBackgroundColor: Color = MaterialTheme.colorScheme.background,
-    titleTextColor: Color = MaterialTheme.colorScheme.tertiary,
+    titleTextColor: Color = MaterialTheme.colorScheme.onBackground,
     dataColor: Color = MaterialTheme.colorScheme.primary,
     dataStyle: TextStyle = MaterialTheme.typography.bodyMedium,
 ) {
@@ -111,6 +111,48 @@ fun TitleCard(
 }
 
 @Composable
+fun TitledBorder(
+    modifier: Modifier = Modifier,
+    title: String,
+    titleColor: Color = MaterialTheme.colorScheme.tertiary,
+    borderColor: Color = MaterialTheme.colorScheme.onBackground,
+    backgroundColor: Color = MaterialTheme.colorScheme.background,
+    content: @Composable () -> Unit
+) {
+    var titleHeight by remember { mutableStateOf(0.dp) }
+    val density = LocalDensity.current
+
+    Box(modifier = modifier) {
+        // Body
+        Box(
+            //contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = titleHeight / 2) // Push top of Box down by half title height for title alignment
+                .background(backgroundColor)
+                .border(BorderStroke(2.dp, borderColor), shape = RoundedCornerShape(12.dp))
+                .padding(12.dp)
+        ) {
+            content()
+        }
+        // Title
+        Text(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .onGloballyPositioned { coordinates ->
+                    titleHeight = with(density) { coordinates.size.height.toDp() }
+                }
+                .background(backgroundColor)
+                .padding(horizontal = 8.dp),
+            text = title,
+            textAlign = TextAlign.Center,
+            color = titleColor,
+            style = MaterialTheme.typography.titleSmall
+            )
+    }
+}
+
+@Composable
 fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry, segmentDistance: Float = 0f) {
     val locale = Locale.getDefault()
     val latitude = doubleToDMS(entry.latitude, true)
@@ -124,7 +166,7 @@ fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry, segmentDistance
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(pad),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background),
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.onBackground),
+        border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
     ) {
         Surface(
             shape = RoundedCornerShape(pad),

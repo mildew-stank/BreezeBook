@@ -39,21 +39,18 @@ android {
 }
 
 dependencies {
-    val roomVersion = "2.7.2"
     implementation(libs.androidx.room.compiler)
-    implementation("org.ramani-maps:ramani-maplibre:0.9.2")
-    //implementation(libs.maplibre.composeMaterial3)
-    //implementation(libs.maplibre.compose)
-    implementation("com.google.android.gms:play-services-location:21.3.0")
-    implementation("androidx.navigation:navigation-compose:2.9.0")
-    implementation("androidx.compose.material3:material3:1.3.2")
-    implementation("androidx.compose.material3:material3-window-size-class:1.3.2")
-    implementation("androidx.compose.material3:material3-adaptive-navigation-suite") // which version?
-    implementation("androidx.compose.material:material-icons-extended")
-    ksp("androidx.room:room-compiler:$roomVersion")
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    implementation("androidx.datastore:datastore-preferences:1.1.7")
+    implementation(libs.ramani.maplibre)
+    implementation(libs.play.services.location)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.material3)
+    implementation(libs.androidx.material3.window.size.class1)
+    implementation(libs.androidx.material3.adaptive.navigation.suite)
+    implementation(libs.androidx.material.icons.extended)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
