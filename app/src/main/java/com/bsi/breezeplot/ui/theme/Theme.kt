@@ -10,19 +10,19 @@ import androidx.core.view.WindowCompat
 import com.bsi.breezeplot.viewmodels.AppTheme
 
 private val CalmWaterColorScheme = darkColorScheme(
-    primary = OrangePrimary, // big text
-    secondary = OrangeSecondary, // medium text
-    tertiary = OrangeTertiary, // map pin lines
+    primary = OrangePrimary,
+    secondary = OrangeSecondary,
+    tertiary = OrangeTertiary,
     onSurface = LightBlue,
     surface = MediumBlue,
-    onBackground = LightBlue, // line borders
+    onBackground = LightBlue,
     background = DarkBlue,
     outline = LightBlue
 )
 
 private val HighTideColorScheme = darkColorScheme(
     primary = Yellow500,
-    secondary = Yellow500A75,
+    secondary = Yellow550,
     tertiary = Yellow700,
     onSurface = Blue300,
     surface = Blue900,
@@ -33,7 +33,7 @@ private val HighTideColorScheme = darkColorScheme(
 
 private val DarkNightColorScheme = darkColorScheme(
     primary = Monochrome0,
-    secondary = Monochrome50,
+    secondary = Monochrome100,
     tertiary = Monochrome100,
     onSurface = Monochrome300,
     surface = Monochrome900,
@@ -44,8 +44,7 @@ private val DarkNightColorScheme = darkColorScheme(
 
 @Composable
 fun BreezePlotTheme(
-    theme: AppTheme = AppTheme.CALM_WATER,
-    content: @Composable () -> Unit
+    theme: AppTheme = AppTheme.CALM_WATER, content: @Composable () -> Unit
 ) {
     val view = LocalView.current
     val colorScheme = when (theme) {
@@ -57,11 +56,11 @@ fun BreezePlotTheme(
         //        if (isSystemInDarkTheme()) dynamicDarkColorScheme(LocalContext.current)
         //        else dynamicLightColorScheme(LocalContext.current)
         //    } else {
-        //        DefaultColorScheme
+        //        CalmWaterColorScheme
         //    }
         //}
     }
-    val isLightTheme = when(theme) {
+    val isLightTheme = when (theme) {
         AppTheme.CALM_WATER -> false
         AppTheme.HIGH_TIDE -> false
         AppTheme.DARK_NIGHT -> false
@@ -76,8 +75,6 @@ fun BreezePlotTheme(
         }
     }
     MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+        colorScheme = colorScheme, typography = Typography, content = content
     )
 }

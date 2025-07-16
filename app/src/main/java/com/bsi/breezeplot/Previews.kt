@@ -1,41 +1,16 @@
 package com.bsi.breezeplot
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.bsi.breezeplot.ui.components.ButtonCard
 import com.bsi.breezeplot.ui.components.LogEntryCard
 import com.bsi.breezeplot.ui.components.PinDialog
-import com.bsi.breezeplot.ui.components.RadioOptions
 import com.bsi.breezeplot.ui.components.SettingsDialog
-import com.bsi.breezeplot.ui.components.SwitchOption
-import com.bsi.breezeplot.ui.components.TitledBorder
-import com.bsi.breezeplot.ui.graphics.generateWavyLines
-import com.bsi.breezeplot.ui.graphics.wavyLines
-import com.bsi.breezeplot.ui.graphics.wavyLinesExtended
 import com.bsi.breezeplot.ui.screens.DashboardLayout
 import com.bsi.breezeplot.ui.screens.LogLayout
-import com.bsi.breezeplot.ui.screens.SettingsScreen
+import com.bsi.breezeplot.ui.screens.SettingsLayout
 import com.bsi.breezeplot.ui.theme.BreezePlotTheme
 import com.bsi.breezeplot.utils.doubleToDMS
 import com.bsi.breezeplot.viewmodels.LogEntry
-import com.bsi.breezeplot.viewmodels.SettingsViewModel
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
@@ -132,26 +107,14 @@ fun TogglePreview() {
             items = listOf(
                 "Keep screen on" to true,
                 "Run in background" to false,
-            ),
-            onConfirm = { null },
-            onDismiss = { null },
-        )
+            ), onConfirm = { null }, onDismiss = { null })
     }
 }
 
-//@Preview
-//@Composable
-//fun ThemeSelectPreview() {
-//    BreezePlotTheme {
-//        ThemeDialog(settingsViewModel = SettingsViewModel())
-//    }
-//}
-
-//TODO: make this preview-able again same as others its the viewmodel
 @Preview
 @Composable
 fun SettingsPreview() {
     BreezePlotTheme {
-        SettingsScreen()
+        SettingsLayout(true)
     }
 }

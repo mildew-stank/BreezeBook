@@ -114,8 +114,8 @@ fun TitleCard(
 fun TitledBorder(
     modifier: Modifier = Modifier,
     title: String,
-    titleColor: Color = MaterialTheme.colorScheme.tertiary,
-    borderColor: Color = MaterialTheme.colorScheme.onBackground,
+    titleColor: Color = MaterialTheme.colorScheme.onBackground,
+    borderColor: Color = MaterialTheme.colorScheme.outline,
     backgroundColor: Color = MaterialTheme.colorScheme.background,
     content: @Composable () -> Unit
 ) {
@@ -136,19 +136,17 @@ fun TitledBorder(
             content()
         }
         // Title
-        Text(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .onGloballyPositioned { coordinates ->
-                    titleHeight = with(density) { coordinates.size.height.toDp() }
-                }
-                .background(backgroundColor)
-                .padding(horizontal = 8.dp),
+        Text(modifier = Modifier
+            .align(Alignment.TopCenter)
+            .onGloballyPositioned { coordinates ->
+                titleHeight = with(density) { coordinates.size.height.toDp() }
+            }
+            .background(backgroundColor)
+            .padding(horizontal = 8.dp),
             text = title,
             textAlign = TextAlign.Center,
             color = titleColor,
-            style = MaterialTheme.typography.titleSmall
-            )
+            style = MaterialTheme.typography.titleSmall)
     }
 }
 

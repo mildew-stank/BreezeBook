@@ -31,9 +31,28 @@ import com.bsi.breezeplot.viewmodels.SettingsViewModel
 @Composable
 fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
     val uiState by settingsViewModel.uiState.collectAsState()
+
+    SettingsLayout(
+        keepScreenOn = uiState.keepScreenOn,
+        runInBackground = uiState.runInBackground,
+        appTheme = uiState.selectedTheme,
+        onKeepScreenOnChange = { settingsViewModel.setKeepScreenOn(!uiState.keepScreenOn) },
+        onRunInBackgroundChange = { settingsViewModel.setRunInBackground(!uiState.runInBackground) },
+        onThemeChange = { settingsViewModel.setSelectedTheme(it) })
+}
+
+@Composable
+fun SettingsLayout(
+    keepScreenOn: Boolean = false,
+    runInBackground: Boolean = false,
+    appTheme: AppTheme = AppTheme.CALM_WATER,
+    onKeepScreenOnChange: (Boolean) -> Unit = {},
+    onRunInBackgroundChange: (Boolean) -> Unit = {},
+    onThemeChange: (AppTheme) -> Unit = {}
+) {
     val pad = 12.dp
 
-    BreezePlotTheme (uiState.selectedTheme) {
+    BreezePlotTheme(appTheme) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Column(
                 Modifier
@@ -47,17 +66,16 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
                         .fillMaxWidth()
                 ) {
                     Icon(
-                        //imageVector = generateWavyLines(5),
                         imageVector = wavyLines,
                         contentDescription = "Wavy lines",
-                        tint = MaterialTheme.colorScheme.onBackground,
+                        tint = MaterialTheme.colorScheme.outline,
                         modifier = Modifier
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter)
                     )
                     Column(
                         Modifier.padding(horizontal = pad),
-                        verticalArrangement = Arrangement.spacedBy(24.dp)
+                        verticalArrangement = Arrangement.spacedBy(pad)
                     ) {
                         TitledBorder(
                             title = "Power Management"
@@ -65,14 +83,14 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
                             Column {
                                 SwitchOption(
                                     text = "Keep screen on",
-                                    defaultValue = uiState.keepScreenOn,
-                                    onValueChange = { settingsViewModel.setKeepScreenOn(it) }
-                                )
+                                    defaultValue = keepScreenOn,
+                                    onValueChange = { onKeepScreenOnChange(it) })
                                 SwitchOption(
                                     text = "Run in background",
-                                    defaultValue = uiState.runInBackground,
-                                    onValueChange = { settingsViewModel.setRunInBackground(it) }
-                                )
+                                    defaultValue = runInBackground,
+                                    onValueChange = {
+                                        onRunInBackgroundChange(it)
+                                    })
                             }
                         }
                         TitledBorder(
@@ -81,12 +99,12 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel = viewModel()) {
                             Column {
                                 RadioOptions(
                                     options = AppTheme.entries.map { it.displayName },
-                                    selectedOption = uiState.selectedTheme.displayName,
+                                    selectedOption = appTheme.displayName,
                                     onSelected = { selectedName ->
-                                        val selectedTheme = AppTheme.entries.first { it.displayName == selectedName }
-                                        settingsViewModel.setSelectedTheme(selectedTheme)
-                                    }
-                                )
+                                        val selectedTheme =
+                                            AppTheme.entries.first { it.displayName == selectedName }
+                                        onThemeChange(selectedTheme)
+                                    })
                             }
                         }
                     }

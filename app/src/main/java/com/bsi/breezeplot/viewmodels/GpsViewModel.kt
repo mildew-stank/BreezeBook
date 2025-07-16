@@ -98,7 +98,9 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
-        Log.d("GpsViewModel", "previousLocation init $previousLocation")
+        Log.d(
+            "GpsViewModel", "previousLocation init $previousLocation"
+        ) // TODO: more logging and testing of gps filter
     }
 
     fun saveTripData() {
@@ -113,7 +115,6 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    //var lastGoodLocation: Location? = null
     fun updateLocationData(currentLocation: Location) {
         if (!currentLocation.hasAccuracy() || currentLocation.accuracy > 15.43f) { // 0.5 arc seconds
             _hasGpsAccuracy.value = false
@@ -122,49 +123,43 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
         }
         val lastLocation = previousLocation
 
-        previousLocation = currentLocation
         _hasGpsAccuracy.value = true
         _latitude.value = currentLocation.latitude
         _longitude.value = currentLocation.longitude
         if (lastLocation == null) {
-            previousLocation = currentLocation
             _hasClusterAccuracy.value = false
+            previousLocation = currentLocation
             return
         }
         val distanceMoved = lastLocation.distanceTo(currentLocation)
         val movementRecognitionThreshold = max(lastLocation.accuracy, currentLocation.accuracy)
-            //(lastLocation.accuracy + currentLocation.accuracy) / 2.0f * 1.5f
 
         if (distanceMoved <= movementRecognitionThreshold) {
             _hasClusterAccuracy.value = false
             return
         }
+        val filteredDistanceMoved = lastLocation.distanceTo(currentLocation)
 
-        val filteredDistanceMoved = previousLocation?.distanceTo(currentLocation)
-
-        //lastGoodLocation?.distanceTo(currentLocation)?.let {
-        if (filteredDistanceMoved != null) {
-            if (filteredDistanceMoved >= 185.2){ //0.1NM
-                _tripDistance.value += distanceMoved
-            }
+        if (filteredDistanceMoved >= 185.2) { //0.1NM
+            _tripDistance.value += distanceMoved
+            previousLocation = currentLocation
         }
-
-
         if (currentLocation.hasSpeed() && currentLocation.speed >= 0.51f) { // 1kn
             _hasClusterAccuracy.value = true
             _speed.value = currentLocation.speed
         } else {
+            _hasClusterAccuracy.value = false
             _speed.value = 0.0f
             _bearing.value = 0.0f
+            return
         }
-        if (currentLocation.hasBearing() && _speed.value > 0.0f) {
+        if (currentLocation.hasBearing()) {
             _bearing.value = currentLocation.bearing
         }
     }
 
     fun resetDistance() {
         _tripDistance.value = 0.0f
-        //saveTripData()
     }
 
     fun updateUtcTime() {

@@ -33,17 +33,16 @@ import androidx.navigation.NavController
 import com.bsi.breezeplot.AppDestinations
 import com.bsi.breezeplot.DATE_FORMAT
 import com.bsi.breezeplot.TIME_FORMAT
-import com.bsi.breezeplot.viewmodels.BarometerViewModel
-import com.bsi.breezeplot.viewmodels.GpsViewModel
 import com.bsi.breezeplot.ui.components.ButtonCard
 import com.bsi.breezeplot.ui.components.ConfirmationDialog
 import com.bsi.breezeplot.ui.components.PinDialog
-//import com.bsi.breezeplot.ui.components.ThemeDialog
 import com.bsi.breezeplot.ui.components.TitleCard
 import com.bsi.breezeplot.ui.graphics.wavyLines
 import com.bsi.breezeplot.utils.distanceToNauticalMiles
 import com.bsi.breezeplot.utils.doubleToDMS
 import com.bsi.breezeplot.utils.speedToKnots
+import com.bsi.breezeplot.viewmodels.BarometerViewModel
+import com.bsi.breezeplot.viewmodels.GpsViewModel
 import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -123,10 +122,7 @@ fun DashboardScreen(
         navController,
         { showBarometerDialog.value = true },
         { showTripDialog.value = true },
-        {
-            //showSettingsDialog.value = true
-            navController.navigate(AppDestinations.SETTINGS_ROUTE)
-        },
+        { showSettingsDialog.value = true },
         hasGpsAccuracy,
         hasClusterAccuracy,
         hasBarometer,
@@ -176,8 +172,10 @@ fun DashboardScreen(
             },
             onDismiss = { showTripDialog.value = false })
     } else if (showSettingsDialog.value) {
-        // TODO: this stuff
-        //ThemeDialog(onDismiss = { showSettingsDialog.value = false })
+        ConfirmationDialog(dialogText = "Open settings menu?", onConfirm = {
+            navController.navigate(AppDestinations.SETTINGS_ROUTE)
+            showSettingsDialog.value = false
+        }, onDismiss = { showSettingsDialog.value = false })
     }
 }
 

@@ -1,17 +1,13 @@
 // TODO:
 //  Refactor hierarchy so screens have one ViewModel that takes from gps/log/barometer static classes.
 //  Remove portrait restriction from AndroidManifest and do better.
-//  +Add an option to enable a foreground service. This would allow increased Trip Meter accuracy,
-//   reliable Barometer auto-logging, and an anchor alarm.
 //  Add divider to Log.
 //  Make it harder to accidentally flick dismiss a log card while scrolling.
 //  Add NMEA support to Chart.
-//  Add a ? button on the chart to explain that the red area is a depth of less than 200 meters,
-//   and that the gridlines are spaced 10 degrees apart.
-//  ++Set proper theme colors in dark_night_map.json
-//  +?Add confirmation dialog before going to settings from dashboard long press
-//  +Lots of cleanup
-//  +Trip meter and such needs tested again
+//  +Add a ? button on the chart to explain that the red area is a depth of less than 200 meters,
+//   and that the gridlines are spaced 10 degrees apart. Use ConfirmationDialog.
+//  +Add an option to enable a foreground service. This would allow increased Trip Meter accuracy,
+//   enable reliable Barometer auto-logging, and an anchor alarm. Else comment out Run in Background.
 
 package com.bsi.breezeplot
 
@@ -95,7 +91,7 @@ class MainActivity : ComponentActivity() {
                     window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
             }
-            BreezePlotTheme (theme = settingsState.selectedTheme) {
+            BreezePlotTheme(theme = settingsState.selectedTheme) {
                 NavHost(
                     navController = navController,
                     startDestination = AppDestinations.DASHBOARD_ROUTE
@@ -114,7 +110,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable(AppDestinations.CHART_ROUTE) {
                         ChartScreen(
-                            gpsViewModel = gpsViewModel, logViewModel = logViewModel, settingsViewModel = settingsViewModel
+                            gpsViewModel = gpsViewModel,
+                            logViewModel = logViewModel,
+                            settingsViewModel = settingsViewModel
                         )
                     }
                     composable(AppDestinations.SETTINGS_ROUTE) {
@@ -155,7 +153,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        //gpsViewModel.saveTripData()//
-        //barometerViewModel.savePressureReadingHistory()//
+        settingsViewModel.saveSettings()
+        gpsViewModel.saveTripData()
+        barometerViewModel.savePressureReadingHistory()
     }
 }

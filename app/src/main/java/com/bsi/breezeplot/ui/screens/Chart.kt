@@ -39,7 +39,9 @@ import java.util.Locale
 
 @Composable
 fun ChartScreen(
-    gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewModel = viewModel(), settingsViewModel: SettingsViewModel = viewModel()
+    gpsViewModel: GpsViewModel = viewModel(),
+    logViewModel: LogViewModel = viewModel(),
+    settingsViewModel: SettingsViewModel = viewModel()
 ) {
     val settingsState by settingsViewModel.uiState.collectAsState()
     val latitude by gpsViewModel.latitude.collectAsState()
@@ -57,7 +59,8 @@ fun ChartScreen(
             // Even if no network features are used removing it from manifest will crash to desktop
             MapLibre(
                 modifier = Modifier.fillMaxSize(),
-                styleBuilder = Style.Builder().fromUri(getThemedMapStyle(settingsState.selectedTheme)),
+                styleBuilder = Style.Builder()
+                    .fromUri(getThemedMapStyle(settingsState.selectedTheme)),
                 cameraPosition = cameraPosition.value,
                 locationStyling = LocationStyling(
                     foregroundTintColor = MaterialTheme.colorScheme.primary.toArgb(),
@@ -99,15 +102,15 @@ fun ChartScreen(
             selectedEntry?.let { entry ->
                 PinDialog(
                     items = listOf(
-                    "Date" to entry.date,
-                    "Time" to entry.time,
-                    "Speed" to String.format(
-                        Locale.getDefault(), "%.1fkn", speedToKnots(entry.speed)
+                        "Date" to entry.date,
+                        "Time" to entry.time,
+                        "Speed" to String.format(
+                            Locale.getDefault(), "%.1fkn", speedToKnots(entry.speed)
+                        ),
+                        "Heading" to String.format(Locale.getDefault(), "%.1f°", entry.bearing),
+                        "Latitude" to doubleToDMS(entry.latitude, true),
+                        "Longitude" to doubleToDMS(entry.longitude, false)
                     ),
-                    "Heading" to String.format(Locale.getDefault(), "%.1f°", entry.bearing),
-                    "Latitude" to doubleToDMS(entry.latitude, true),
-                    "Longitude" to doubleToDMS(entry.longitude, false)
-                ),
                     onConfirm = { selectedEntry = null },
                     onDismiss = { selectedEntry = null },
                     actionButtonText = "Delete",
@@ -126,5 +129,6 @@ fun getThemedMapStyle(currentTheme: AppTheme): String {
         AppTheme.CALM_WATER -> "asset://calm_water_map.json"
         AppTheme.HIGH_TIDE -> "asset://high_tide_map.json"
         AppTheme.DARK_NIGHT -> "asset://dark_night_map.json"
+        //AppTheme.DYNAMIC -> "asset://calm_water_map.json"
     }
 }

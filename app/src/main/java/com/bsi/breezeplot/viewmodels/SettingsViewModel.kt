@@ -5,7 +5,6 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bsi.breezeplot.dataStore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,17 +41,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         loadSettings()
     }
 
-    // TODO: get the loads across models stylistically consistent
     private fun loadSettings() {
         viewModelScope.launch {
             val preferences = getApplication<Application>().dataStore.data.first()
 
-            val keepScreenOn = preferences[KEEP_SCREEN_ON_KEY] ?: false
-            val runInBackground = preferences[RUN_IN_BACKGROUND_KEY] ?: false
+            val keepScreenOn = preferences[KEEP_SCREEN_ON_KEY] == true
+            val runInBackground = preferences[RUN_IN_BACKGROUND_KEY] == true
             val themeString = preferences[SELECTED_THEME_KEY] ?: AppTheme.CALM_WATER.name
             val selectedTheme = try {
                 AppTheme.valueOf(themeString)
-            } catch (e: IllegalArgumentException) {
+            } catch (_: IllegalArgumentException) {
                 AppTheme.CALM_WATER
             }
 
@@ -66,7 +64,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun saveSettings() {
+    fun saveSettings() {
         viewModelScope.launch {
             val currentState = _uiState.value
             getApplication<Application>().dataStore.edit { preferences ->
@@ -93,5 +91,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { currentState ->
             currentState.copy(selectedTheme = theme)
         }
+    }
+
+    override fun onCleared() {
+        saveSettings()
+        super.onCleared()
     }
 }

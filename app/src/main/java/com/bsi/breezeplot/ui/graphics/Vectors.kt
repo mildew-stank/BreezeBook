@@ -1,6 +1,9 @@
 package com.bsi.breezeplot.ui.graphics
 
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType.Companion.NonZero
 import androidx.compose.ui.graphics.SolidColor
@@ -23,8 +26,11 @@ private fun PathBuilder.drawWavyLine(startY: Float) {
     curveToRelative(8.47f, 0.0f, 18.63f, 16.6f, 33.87f, 16.93f)
 }
 
-fun generateWavyLines(numberOfLines: Int = 3): ImageVector {
-    val viewportHeight = 25.4f+(33.87f*(numberOfLines-1))+8.46f
+@Composable
+fun GenerateWavyLines(
+    modifier: Modifier = Modifier, numberOfLines: Int = 3
+) {
+    val viewportHeight = 25.4f + (33.87f * (numberOfLines - 1)) + 8.46f
     val defaultHeight = 128.dp * numberOfLines
     val validNumberOfLines = numberOfLines.coerceAtLeast(1)
     val yCoordinates = mutableListOf<Float>()
@@ -36,7 +42,7 @@ fun generateWavyLines(numberOfLines: Int = 3): ImageVector {
             currentY -= 33.87f
         }
     }
-    return ImageVector.Builder(
+    val image = ImageVector.Builder(
         name = "WavyLines",
         defaultWidth = 1024.dp,
         defaultHeight = defaultHeight,
@@ -57,30 +63,14 @@ fun generateWavyLines(numberOfLines: Int = 3): ImageVector {
             }
         }
     }.build()
-}
 
-val wavyLines3 = ImageVector.Builder( // TODO: see if this works as a replacement
-    name = "WavyLines",
-    defaultWidth = 1024.dp,
-    defaultHeight = 384.dp,
-    viewportWidth = 270.93f,
-    viewportHeight = 101.6f
-).apply {
-    val yCoordinates = listOf(93.14f, 59.27f, 25.4f)
-    yCoordinates.forEach { y ->
-        path(
-            fill = SolidColor(Color.Transparent),
-            stroke = SolidColor(Color.Black),
-            strokeLineWidth = 1f,
-            strokeLineCap = Round,
-            strokeLineJoin = StrokeJoin.Companion.Round,
-            strokeLineMiter = 4.0f,
-            pathFillType = NonZero
-        ) {
-            drawWavyLine(y)
-        }
-    }
-}.build()
+    Icon(
+        imageVector = image,
+        contentDescription = "Wavy lines",
+        tint = MaterialTheme.colorScheme.outline,
+        modifier = modifier
+    )
+}
 
 val wavyLines = ImageVector.Builder(
     name = "WavyLines",
@@ -155,7 +145,6 @@ val wavyLinesExtended = ImageVector.Builder(
     viewportWidth = 270.93f,
     viewportHeight = 169.35f
 ).apply {
-    // Original three lines
     listOf(160.88f, 127.01f, 93.14f, 59.27f, 25.4f).forEach { y ->
         path(
             fill = SolidColor(Color(0x00000000)),

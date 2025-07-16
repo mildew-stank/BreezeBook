@@ -198,17 +198,11 @@ fun LogLayout(
                         }
                         item { Spacer(modifier = Modifier.height(16.dp)) }
                     }
-                    //Icon(
-                    //    imageVector = wavyFill,
-                    //    contentDescription = "Wavy lines",
-                    //    tint = Color.Unspecified,
-                    //    modifier = Modifier
-                    //        .fillMaxWidth()
-                    //        .align(Alignment.BottomCenter)
-                    //)
-                    FilledWave(Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter))
+                    FilledWave(
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                    )
                 }
             }
             // Button row
@@ -225,7 +219,7 @@ fun LogLayout(
 }
 
 @Composable
-fun FilledWave(modifier: Modifier = Modifier){
+fun FilledWave(modifier: Modifier = Modifier) {
     val wavyFill = ImageVector.Builder(
         name = "WavyFill",
         defaultWidth = 1024.0.dp,
@@ -244,7 +238,7 @@ fun FilledWave(modifier: Modifier = Modifier){
         }
         path(
             fill = SolidColor(MaterialTheme.colorScheme.background),
-            stroke = SolidColor(MaterialTheme.colorScheme.onBackground),
+            stroke = SolidColor(MaterialTheme.colorScheme.outline),
             strokeLineWidth = 1f,
             strokeLineCap = Round,
             strokeLineJoin = StrokeJoin.Companion.Round,
@@ -267,8 +261,6 @@ fun FilledWave(modifier: Modifier = Modifier){
         imageVector = wavyFill,
         contentDescription = "Wavy lines",
         tint = Color.Unspecified,
-        modifier = modifier// = Modifier
-            //.fillMaxWidth()
-            //.align(Alignment.BottomCenter)
+        modifier = modifier
     )
 }

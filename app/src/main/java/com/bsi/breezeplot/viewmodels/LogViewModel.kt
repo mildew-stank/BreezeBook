@@ -107,7 +107,7 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         logRepository = LogRepository(logEntryDao)
         persistedLogEntries = logRepository.allLogEntries.stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000), // Keep subscribed for 5s after last collector
+            started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
     }

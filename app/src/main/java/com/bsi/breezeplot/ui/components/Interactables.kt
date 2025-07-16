@@ -1,6 +1,5 @@
 package com.bsi.breezeplot.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,13 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -28,7 +22,6 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,7 +36,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.bsi.breezeplot.viewmodels.AppTheme
 import com.bsi.breezeplot.viewmodels.LogEntry
 import kotlinx.coroutines.delay
 
@@ -172,7 +164,7 @@ fun SwitchOption(
 @Composable
 fun RadioOptions(
     options: List<String> = listOf("Option A", "Option B", "Option C"),
-    selectedOption: String= "Option B",
+    selectedOption: String = "Option B",
     onSelected: (String) -> Unit = {}
 ) {
     Column(Modifier.selectableGroup()) {
@@ -202,96 +194,6 @@ fun RadioOptions(
                     color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.bodySmall
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun ThemeSelectorRadioGroup(
-    modifier: Modifier = Modifier, themes: List<String> = listOf("Theme 1", "Theme 2", "Theme 3")
-
-) {
-    // This state should be hoisted to a ViewModel in a real application
-    var selectedTheme by remember { mutableStateOf(themes[0]) }
-
-    Column(modifier = modifier) {
-        themes.forEach { theme ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        selectedTheme = theme
-                        // TODO: Add logic here to update the application's theme
-                    },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = theme,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                RadioButton(
-                    selected = (theme == selectedTheme), colors = RadioButtonDefaults.colors(
-                        selectedColor = MaterialTheme.colorScheme.primary,
-                        unselectedColor = MaterialTheme.colorScheme.secondary
-                    ), onClick = {
-                        selectedTheme = theme
-                        // TODO: Add logic here to update the application's theme
-                    })
-
-            }
-        }
-    }
-}
-
-//@OptIn(ExperimentalMaterial3Api::class) // For ExposedDropdownMenuBox
-@Composable
-fun ThemeSelectorDropdown() {
-    val themes = AppTheme.entries//listOf("Calm Water", "High Tide", "Dark Night")
-    var expanded by remember { mutableStateOf(false) }
-    var selectedTheme by remember { mutableStateOf(themes[0]) }
-
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        //.padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Box {
-            TextField(
-                value = selectedTheme.displayName, onValueChange = {},
-                //label = { Text(text = "Theme", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onBackground) },
-                readOnly = true, textStyle = MaterialTheme.typography.titleSmall, trailingIcon = {
-                    Icon(
-                        Icons.Default.ArrowDropDown,
-                        contentDescription = "Dropdown",
-                        Modifier.clickable { expanded = !expanded })
-                }, modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() }, indication = null
-                ) {
-                    expanded = true
-                })
-
-            DropdownMenu(
-                expanded = expanded, onDismissRequest = { expanded = false }) {
-                themes.forEach { selectionOption ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                selectionOption.displayName,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
-                        },
-                        onClick = {
-                            selectedTheme = selectionOption
-                            expanded = false
-                            // TODO: Add logic here to update the application's theme
-                        },
-                        //colors = ExposedDropdownMenuDefaults.itemColors(
-                    )
-                }
             }
         }
     }

@@ -7,7 +7,7 @@ val DarkBlue = Color(0xff254151) // background
 val MediumBlue = Color(0xff345c72) // surface (buttons and alert background) // onBackground (label text)
 val LightBlue = Color(0xff77b6b1) // outline (card lines)
 val OrangePrimary = Color(0xffe86b3b) // primary (data text)
-val OrangeSecondary = Color(0xbfe86b3b) // secondary (date and pins)
+val OrangeSecondary = Color(0xffb76040)//bfe86b3b) // secondary (date and pins)
 val OrangeTertiary = Color(0xffbf5831) // onSecondary (segment lines)
 // High Tide
 val Blue950 = Color(0xff152838) // background
@@ -16,7 +16,7 @@ val Blue700 = Color(0xff255a7f) // outline (card lines)
 val Blue500 = Color(0xff3d8cba) // onBackground (label text)
 val Blue300 = Color(0xff99c5e0) // onSurface (button text)
 val Yellow700 = Color(0xffbb6902) // tertiary (segment lines)
-val Yellow500A75 = Color(0xbfffc40f) // secondary (date and pins)
+val Yellow550 = Color(0xffc49d19) // secondary (date and pins)
 val Yellow500 = Color(0xffffc40f) // primary (data text)
 // Dark Night
 val Monochrome950 = Color(0xff000000) // background
