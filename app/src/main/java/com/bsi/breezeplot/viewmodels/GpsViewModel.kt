@@ -34,11 +34,25 @@ object DistancePrefs {
     val LAST_LONGITUDE = floatPreferencesKey("last_longitude")
 }
 
+data class GpsUiState(
+    val hasGpsAccuracy: Boolean = false,
+    val hasClusterAccuracy: Boolean = false,
+    val systemUtcTime: ZonedDateTime = ZonedDateTime.now(ZoneOffset.UTC),
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val speed: Float = 0.0f,
+    val bearing: Float = 0.0f,
+    val tripDistance: Float = 0.0f
+)
+
 class GpsViewModel(application: Application) : AndroidViewModel(application) {
     private var previousLocation: Location? = null
     private val dataStore: DataStore<Preferences> = application.dataStore
     private val locationManager =
         application.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+
+    private val _uiState = MutableStateFlow(GpsUiState())
+    val uiState: StateFlow<GpsUiState> = _uiState.asStateFlow()
 
     private val _latitude = MutableStateFlow(0.0)
     val latitude: StateFlow<Double> = _latitude.asStateFlow()

@@ -59,10 +59,11 @@ fun LogEntryPreview() {
             longitude = -118.2437,
             speed = 15.5f,
             bearing = 180.0f,
+            distance = 140.0f,
             time = "17:32:22",
             date = "27/06/2025"
         )
-        LogEntryCard(entry = mockLogEntry, segmentDistance = 140.0f)
+        LogEntryCard(entry = mockLogEntry)
     }
 }
 

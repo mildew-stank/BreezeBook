@@ -85,12 +85,12 @@ fun SettingsLayout(
                                     text = "Keep screen on",
                                     defaultValue = keepScreenOn,
                                     onValueChange = { onKeepScreenOnChange(it) })
-                                SwitchOption(
-                                    text = "Run in background",
-                                    defaultValue = runInBackground,
-                                    onValueChange = {
-                                        onRunInBackgroundChange(it)
-                                    })
+                                //SwitchOption(
+                                //    text = "Run in background",
+                                //    defaultValue = runInBackground,
+                                //    onValueChange = {
+                                //        onRunInBackgroundChange(it)
+                                //    })
                             }
                         }
                         TitledBorder(

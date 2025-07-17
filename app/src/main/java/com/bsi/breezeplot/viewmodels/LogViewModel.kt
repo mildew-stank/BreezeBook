@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,7 +40,7 @@ data class LogEntry(
     val bearing: Float,
     val time: String,
     val date: String,
-    val distance: Float = 0f,
+    var distance: Float = 0f,
     val timestamp: Long = System.currentTimeMillis(),
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
 )
@@ -105,11 +106,13 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
     init {
         val logEntryDao = AppDatabase.getDatabase(application).logEntryDao()
         logRepository = LogRepository(logEntryDao)
-        persistedLogEntries = logRepository.allLogEntries.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+        persistedLogEntries = logRepository.allLogEntries
+            .map { entries -> calculateSegmentDistances(entries) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
     }
 
     fun addLogEntry(
@@ -144,6 +147,26 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             logRepository.clearAll()
         }
+    }
+
+    private fun calculateSegmentDistances(entries: List<LogEntry>): List<LogEntry> {
+        entries.forEachIndexed { index, entry ->
+            entry.distance = if (index < entries.size - 1) {
+                val previousEntryInTime = entries[index + 1]
+                val currentLocationObj = android.location.Location("currentLocationProvider").apply {
+                    this.latitude = entry.latitude
+                    this.longitude = entry.longitude
+                }
+                val previousLocationObj = android.location.Location("previousLocationProvider").apply {
+                    this.latitude = previousEntryInTime.latitude
+                    this.longitude = previousEntryInTime.longitude
+                }
+                previousLocationObj.distanceTo(currentLocationObj)
+            } else {
+                0f
+            }
+        }
+        return entries
     }
 
     suspend fun exportLogbook(context: Context, uri: Uri): Boolean {

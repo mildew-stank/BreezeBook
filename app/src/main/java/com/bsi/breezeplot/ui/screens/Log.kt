@@ -1,6 +1,5 @@
 package com.bsi.breezeplot.ui.screens
 
-import android.location.Location
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -50,9 +49,11 @@ import com.bsi.breezeplot.viewmodels.LogEntry
 import com.bsi.breezeplot.viewmodels.LogViewModel
 import com.bsi.breezeplot.ui.components.ButtonCard
 import com.bsi.breezeplot.ui.components.ConfirmationDialog
+import com.bsi.breezeplot.ui.components.LogEntryCard
 import com.bsi.breezeplot.ui.components.SwipeItem
 import com.bsi.breezeplot.ui.graphics.wavyLines
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -148,11 +149,11 @@ fun LogLayout(
                             .fillMaxWidth()
                             .align(Alignment.BottomCenter)
                     )
-                    Text(
-                        "No log entries.",
-                        color = MaterialTheme.colorScheme.onBackground,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    //Text(
+                    //    "No log entries.",
+                    //    color = MaterialTheme.colorScheme.onBackground,
+                    //    style = MaterialTheme.typography.bodySmall
+                    //)
                 }
             } else {
                 // Entry list
@@ -172,28 +173,17 @@ fun LogLayout(
                     LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                         itemsIndexed(
                             items = logEntries, key = { _, entry -> entry.id }) { index, entry ->
-                            // Calculate segment distance
-                            val segmentDistance = if (index < logEntries.size - 1) {
-                                val previousEntryInTime = logEntries[index + 1]
-                                val currentLocationObj = Location("currentLocationProvider").apply {
-                                    this.latitude = entry.latitude
-                                    this.longitude = entry.longitude
-                                }
-                                val previousLocationObj =
-                                    Location("previousLocationProvider").apply {
-                                        this.latitude = previousEntryInTime.latitude
-                                        this.longitude = previousEntryInTime.longitude
-                                    }
-                                previousLocationObj.distanceTo(currentLocationObj)
-                            } else {
-                                0f
-                            }
                             // Entry item
                             Box(modifier = Modifier.animateItem()) {
                                 SwipeItem(
-                                    entry = entry,
-                                    segmentDistance = segmentDistance,
-                                    swipeAction = { onSwipeDismiss(entry) })
+                                    swipeAction = { onSwipeDismiss(entry) }) {
+                                    LogEntryCard(
+                                        entry = entry,
+                                        modifier = Modifier
+                                            .padding(horizontal = 12.dp)
+                                            .padding(top = 12.dp)
+                                    )
+                                }
                             }
                         }
                         item { Spacer(modifier = Modifier.height(16.dp)) }

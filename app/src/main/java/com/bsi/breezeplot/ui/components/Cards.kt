@@ -151,13 +151,13 @@ fun TitledBorder(
 }
 
 @Composable
-fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry, segmentDistance: Float = 0f) {
+fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry) {
     val locale = Locale.getDefault()
     val latitude = doubleToDMS(entry.latitude, true)
     val longitude = doubleToDMS(entry.longitude, false)
     val speed = String.format(locale, "%.1fkn", speedToKnots(entry.speed))
     val bearing = String.format(locale, "%.1f°", entry.bearing)
-    val distance = String.format(locale, "%.2fNM", distanceToNauticalMiles(segmentDistance))
+    val distance = String.format(locale, "%.2fNM", distanceToNauticalMiles(entry.distance))
     val pad = 12.dp
 
     Card(

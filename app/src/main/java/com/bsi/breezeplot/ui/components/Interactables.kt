@@ -28,7 +28,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.bsi.breezeplot.viewmodels.LogEntry
 import kotlinx.coroutines.delay
 
 @Composable
@@ -83,9 +81,8 @@ fun ButtonCard(
 
 @Composable
 fun SwipeItem(
-    entry: LogEntry,
-    segmentDistance: Float = 0f,
-    swipeAction: (LogEntry) -> Unit,
+    swipeAction: () -> Unit,
+    content: @Composable () -> Unit
 ) {
     val swipeToDismissState =
         rememberSwipeToDismissBoxState(
@@ -106,21 +103,13 @@ fun SwipeItem(
         modifier = Modifier,
         state = swipeToDismissState,
         backgroundContent = { MaterialTheme.colorScheme.primary }) {
-        val currentEntry = rememberUpdatedState(entry)
-
         if (swipeToDismissState.targetValue != SwipeToDismissBoxValue.Settled && swipeToDismissState.progress == 1.0f) {
-            LaunchedEffect(currentEntry.value) {
-                delay(300) // Wait for the swipe animation to finish
-                swipeAction(currentEntry.value)
+            LaunchedEffect(Unit) {
+                delay(250) // Wait for the swipe animation to finish
+                swipeAction()
             }
         }
-        LogEntryCard(
-            entry = entry,
-            segmentDistance = segmentDistance,
-            modifier = Modifier
-                .padding(horizontal = 12.dp)
-                .padding(top = 12.dp)
-        )
+        content()
     }
 }
 
