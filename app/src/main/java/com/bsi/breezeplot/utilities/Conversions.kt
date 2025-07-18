@@ -1,4 +1,4 @@
-package com.bsi.breezeplot.utils
+package com.bsi.breezeplot.utilities
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb

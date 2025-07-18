@@ -115,14 +115,14 @@ fun SettingsLayout(
                         text = "",
                         onClick = { },
                         modifier = Modifier.weight(1.0f),
-                        containerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
                         enabled = false
                     )
                     ButtonCard(
                         text = "",
                         onClick = { },
                         modifier = Modifier.weight(1.0f),
-                        containerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
                         enabled = false
                     )
                 }

@@ -15,8 +15,8 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.bsi.breezeplot.DATE_FORMAT
-import com.bsi.breezeplot.TIME_FORMAT
+import com.bsi.breezeplot.utilities.DATE_FORMAT
+import com.bsi.breezeplot.utilities.TIME_FORMAT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted

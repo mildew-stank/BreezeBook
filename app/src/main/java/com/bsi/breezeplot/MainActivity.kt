@@ -6,6 +6,8 @@
 //  Add NMEA support to Chart.
 //  Add an option to enable a foreground service. This would allow increased Trip Meter accuracy,
 //   enable reliable Barometer auto-logging, and an anchor alarm.
+//  Refactor screens to use MainTemplate.
+//  +Trip Meter needs a lot more testing. Cut it back to Distance Logged if necessary.
 
 package com.bsi.breezeplot
 
@@ -28,6 +30,7 @@ import androidx.core.app.ActivityCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.bsi.breezeplot.ui.AppDestinations
 import com.bsi.breezeplot.viewmodels.BarometerViewModel
 import com.bsi.breezeplot.viewmodels.GpsViewModel
 import com.bsi.breezeplot.viewmodels.LogViewModel
@@ -42,17 +45,6 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import java.time.format.DateTimeFormatter
-
-val TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
-val DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-
-object AppDestinations {
-    const val DASHBOARD_ROUTE = "dashboard"
-    const val LOG_ROUTE = "log"
-    const val CHART_ROUTE = "chart"
-    const val SETTINGS_ROUTE = "settings"
-}
 
 class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher =

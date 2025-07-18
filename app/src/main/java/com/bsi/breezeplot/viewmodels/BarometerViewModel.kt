@@ -23,7 +23,7 @@ import java.time.Instant
 
 object BarometerPrefs {
     const val MAX_HISTORY_ITEMS = 6
-    const val TOO_LATE_HOURS = 4L
+    const val TOO_LATE_HOURS = 6L
     val INSTANT = List(MAX_HISTORY_ITEMS) { i -> longPreferencesKey("instant_$i") }
     val PRESSURE = List(MAX_HISTORY_ITEMS) { i -> floatPreferencesKey("pressure_$i") }
 }

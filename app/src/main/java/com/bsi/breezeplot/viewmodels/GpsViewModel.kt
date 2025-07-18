@@ -54,33 +54,9 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(GpsUiState())
     val uiState: StateFlow<GpsUiState> = _uiState.asStateFlow()
 
-    private val _latitude = MutableStateFlow(0.0)
-    val latitude: StateFlow<Double> = _latitude.asStateFlow()
-
-    private val _longitude = MutableStateFlow(0.0)
-    val longitude: StateFlow<Double> = _longitude.asStateFlow()
-
-    private val _hasGpsAccuracy = MutableStateFlow(false)
-    val hasGpsAccuracy: StateFlow<Boolean> = _hasGpsAccuracy.asStateFlow()
-
-    private val _speed = MutableStateFlow(0.0f)
-    val speed: StateFlow<Float> = _speed.asStateFlow()
-
-    private val _bearing = MutableStateFlow(0.0f)
-    val bearing: StateFlow<Float> = _bearing.asStateFlow()
-
-    private val _tripDistance = MutableStateFlow(0.0f)
-    val tripDistance: StateFlow<Float> = _tripDistance.asStateFlow()
-
-    private val _hasClusterAccuracy = MutableStateFlow(false)
-    val hasClusterAccuracy: StateFlow<Boolean> = _hasClusterAccuracy.asStateFlow()
-
-    private val _systemUtcTime = MutableStateFlow(ZonedDateTime.now(ZoneOffset.UTC))
-    val systemUtcTime: StateFlow<ZonedDateTime> = _systemUtcTime.asStateFlow()
-
     private val gnssStatusCallback = object : GnssStatus.Callback() {
         override fun onStopped() {
-            _hasGpsAccuracy.value = false
+            _uiState.value = _uiState.value.copy(hasGpsAccuracy = false)
         }
     }
 
@@ -104,7 +80,10 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
             val lastLat = prefs[DistancePrefs.LAST_LATITUDE]
             val lastLon = prefs[DistancePrefs.LAST_LONGITUDE]
 
-            _tripDistance.value = prefs[DistancePrefs.TOTAL_DISTANCE] ?: 0f
+            _uiState.value = _uiState.value.copy(
+                tripDistance = prefs[DistancePrefs.TOTAL_DISTANCE] ?: 0f
+            )
+
             if (lastLat != null && lastLon != null) {
                 previousLocation = Location("lastSaved").apply {
                     latitude = lastLat.toDouble()
@@ -114,13 +93,13 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
         }
         Log.d(
             "GpsViewModel", "previousLocation init $previousLocation"
-        ) // TODO: more logging and testing of gps filter
+        )
     }
 
     fun saveTripData() {
         viewModelScope.launch {
             dataStore.edit { prefs ->
-                prefs[DistancePrefs.TOTAL_DISTANCE] = _tripDistance.value
+                prefs[DistancePrefs.TOTAL_DISTANCE] = _uiState.value.tripDistance
                 previousLocation?.let {
                     prefs[DistancePrefs.LAST_LATITUDE] = it.latitude.toFloat()
                     prefs[DistancePrefs.LAST_LONGITUDE] = it.longitude.toFloat()
@@ -130,18 +109,22 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateLocationData(currentLocation: Location) {
-        if (!currentLocation.hasAccuracy() || currentLocation.accuracy > 15.43f) { // 0.5 arc seconds
-            _hasGpsAccuracy.value = false
-            _hasClusterAccuracy.value = false
+        if (!currentLocation.hasAccuracy() || currentLocation.accuracy > 30.86f) { // 1 arc seconds
+            _uiState.value = _uiState.value.copy(
+                hasGpsAccuracy = false,
+                hasClusterAccuracy = false
+            )
             return
         }
         val lastLocation = previousLocation
+        val newState = _uiState.value.copy(
+            hasGpsAccuracy = true,
+            latitude = currentLocation.latitude,
+            longitude = currentLocation.longitude
+        )
 
-        _hasGpsAccuracy.value = true
-        _latitude.value = currentLocation.latitude
-        _longitude.value = currentLocation.longitude
         if (lastLocation == null) {
-            _hasClusterAccuracy.value = false
+            _uiState.value = newState.copy(hasClusterAccuracy = false)
             previousLocation = currentLocation
             return
         }
@@ -149,35 +132,37 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
         val movementRecognitionThreshold = max(lastLocation.accuracy, currentLocation.accuracy)
 
         if (distanceMoved <= movementRecognitionThreshold) {
-            _hasClusterAccuracy.value = false
+            _uiState.value = newState.copy(hasClusterAccuracy = false)
             return
         }
-        val filteredDistanceMoved = lastLocation.distanceTo(currentLocation)
+        if (distanceMoved >= 185.2f) { //0.1NM
+            var tripDistance = newState.tripDistance
 
-        if (filteredDistanceMoved >= 185.2) { //0.1NM
-            _tripDistance.value += distanceMoved
+            tripDistance += distanceMoved
+            _uiState.value = newState.copy(tripDistance = tripDistance)
             previousLocation = currentLocation
         }
         if (currentLocation.hasSpeed() && currentLocation.speed >= 0.51f) { // 1kn
-            _hasClusterAccuracy.value = true
-            _speed.value = currentLocation.speed
+            _uiState.value = newState.copy(
+                hasClusterAccuracy = true,
+                speed = currentLocation.speed,
+                bearing = if (currentLocation.hasBearing()) currentLocation.bearing else 0.0f
+            )
         } else {
-            _hasClusterAccuracy.value = false
-            _speed.value = 0.0f
-            _bearing.value = 0.0f
-            return
-        }
-        if (currentLocation.hasBearing()) {
-            _bearing.value = currentLocation.bearing
+            _uiState.value = newState.copy(
+                hasClusterAccuracy = false,
+                speed = 0.0f,
+                bearing = 0.0f
+            )
         }
     }
 
     fun resetDistance() {
-        _tripDistance.value = 0.0f
+        _uiState.value = _uiState.value.copy(tripDistance = 0.0f)
     }
 
     fun updateUtcTime() {
-        _systemUtcTime.value = ZonedDateTime.now(ZoneOffset.UTC)
+        _uiState.value = _uiState.value.copy(systemUtcTime = ZonedDateTime.now(ZoneOffset.UTC))
     }
 
     override fun onCleared() {

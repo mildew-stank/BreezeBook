@@ -34,9 +34,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bsi.breezeplot.viewmodels.LogEntry
-import com.bsi.breezeplot.utils.distanceToNauticalMiles
-import com.bsi.breezeplot.utils.doubleToDMS
-import com.bsi.breezeplot.utils.speedToKnots
+import com.bsi.breezeplot.utilities.distanceToNauticalMiles
+import com.bsi.breezeplot.utilities.doubleToDMS
+import com.bsi.breezeplot.utilities.speedToKnots
 import java.util.Locale
 
 @Composable

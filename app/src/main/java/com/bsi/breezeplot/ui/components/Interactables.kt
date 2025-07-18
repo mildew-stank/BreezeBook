@@ -44,8 +44,8 @@ fun ButtonCard(
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = MaterialTheme.colorScheme.onBackground,
-    disabledContainerColor: Color = MaterialTheme.colorScheme.background.copy(alpha = 0.12f),
-    disabledContentColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+    disabledContainerColor: Color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+    disabledContentColor: Color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
     enabled: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -105,7 +105,7 @@ fun SwipeItem(
         backgroundContent = { MaterialTheme.colorScheme.primary }) {
         if (swipeToDismissState.targetValue != SwipeToDismissBoxValue.Settled && swipeToDismissState.progress == 1.0f) {
             LaunchedEffect(Unit) {
-                delay(250) // Wait for the swipe animation to finish
+                delay(200) // Wait for the swipe animation to finish
                 swipeAction()
             }
         }

@@ -1,5 +1,6 @@
 package com.bsi.breezeplot.ui.components
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,20 +20,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import com.bsi.breezeplot.ui.graphics.wavyLines
 import kotlinx.coroutines.delay
 
 @Composable
-fun MainTemplate(skipContentDelay: Boolean = false, showButtons: Boolean = true, buttonTextLeft: String = "Back", buttonTextRight: String = "Next", onClickLeft: () -> Unit = {}, onClickRight: () -> Unit = {}, content: @Composable () -> Unit = {}) {
+fun MainTemplate(
+    skipContentDelay: Boolean = false,
+    enableLongPress: Boolean = false,
+    showButtons: Boolean = true,
+    buttonTextLeft: String = "Back",
+    buttonTextRight: String = "Next",
+    onClickLeft: () -> Unit = {},
+    onClickRight: () -> Unit = {},
+    onLongClick: () -> Unit = {},
+    content: @Composable () -> Unit = {}
+) {
     var showContent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         delay(200)
         showContent = true
     }
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(Modifier.fillMaxSize().combinedClickable(enabled = enableLongPress,onClick = {},
+        onLongClick = onLongClick, hapticFeedbackEnabled = false
+    ), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.systemBarsPadding()) {
             Box(
                 modifier = Modifier
@@ -52,23 +65,26 @@ fun MainTemplate(skipContentDelay: Boolean = false, showButtons: Boolean = true,
                 }
             }
         }
-        if (showButtons) {
-            Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ButtonCard(
-                    text = buttonTextLeft,
-                    onClick = onClickLeft,
-                    modifier = Modifier.weight(1.0f),
-                    containerColor = Color.Transparent,
-                    enabled = false
-                )
-                ButtonCard(
-                    text = buttonTextRight,
-                    onClick = onClickRight,
-                    modifier = Modifier.weight(1.0f),
-                    containerColor = Color.Transparent,
-                    enabled = false
-                )
-            }
+        Row(
+            Modifier
+                .padding(12.dp)
+                .alpha(if (showButtons) 1f else 0f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ButtonCard(
+                text = buttonTextLeft,
+                onClick = onClickLeft,
+                modifier = Modifier.weight(1.0f),
+                containerColor = MaterialTheme.colorScheme.surface,
+                enabled = showButtons
+            )
+            ButtonCard(
+                text = buttonTextRight,
+                onClick = onClickRight,
+                modifier = Modifier.weight(1.0f),
+                containerColor = MaterialTheme.colorScheme.surface,
+                enabled = showButtons
+            )
         }
     }
 }

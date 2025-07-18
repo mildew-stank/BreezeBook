@@ -29,9 +29,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bsi.breezeplot.ui.components.ButtonCard
 import com.bsi.breezeplot.ui.components.PinDialog
 import com.bsi.breezeplot.ui.graphics.wavyLines
-import com.bsi.breezeplot.utils.doubleToDMS
-import com.bsi.breezeplot.utils.speedToKnots
-import com.bsi.breezeplot.utils.toRgbHexString
+import com.bsi.breezeplot.utilities.doubleToDMS
+import com.bsi.breezeplot.utilities.speedToKnots
+import com.bsi.breezeplot.utilities.toRgbHexString
 import com.bsi.breezeplot.viewmodels.AppTheme
 import com.bsi.breezeplot.viewmodels.GpsViewModel
 import com.bsi.breezeplot.viewmodels.LogEntry
@@ -49,26 +49,28 @@ import org.ramani.compose.Polyline
 import org.ramani.compose.UiSettings
 import java.util.Locale
 
-
 @Composable
 fun ChartScreen(
     gpsViewModel: GpsViewModel = viewModel(),
     logViewModel: LogViewModel = viewModel(),
     settingsViewModel: SettingsViewModel = viewModel()
 ) {
-    val settingsState by settingsViewModel.uiState.collectAsState()
-    val latitude by gpsViewModel.latitude.collectAsState()
-    val longitude by gpsViewModel.longitude.collectAsState()
+    val settingsUiState by settingsViewModel.uiState.collectAsState()
+    val gpsUiState by gpsViewModel.uiState.collectAsState()
     //val showInfoDialog = remember { mutableStateOf(false) }
     val logEntries by logViewModel.persistedLogEntries.collectAsState()
     var selectedEntry by remember { mutableStateOf<LogEntry?>(null) }
     val cameraPosition = rememberSaveable {
-        mutableStateOf(CameraPosition(target = LatLng(latitude, longitude), zoom = 6.0))
+        mutableStateOf(
+            CameraPosition(
+                target = LatLng(gpsUiState.latitude, gpsUiState.longitude), zoom = 6.0
+            )
+        )
     }
     var showContent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(200) // Let screen animation to complete while map loads
+        delay(400) // Let screen animation to complete while map loads
         showContent = true
     }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -88,71 +90,73 @@ fun ChartScreen(
                 )
                 // MapLibre requires ACCESS_NETWORK_STATE because of ConnectivityReceiver.java
                 // Even if no network features are used removing it from manifest will crash to desktop
-                MapLibre(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .alpha(if (showContent) 1f else 0f),
-                    styleBuilder = Style.Builder()
-                        .fromUri(getThemedMapStyle(settingsState.selectedTheme)),
-                    cameraPosition = cameraPosition.value,
-                    locationStyling = LocationStyling(
-                        foregroundTintColor = MaterialTheme.colorScheme.primary.toArgb(),
-                        backgroundTintColor = MaterialTheme.colorScheme.secondary.toArgb(),
-                    ),
-                    uiSettings = UiSettings(
-                        isAttributionEnabled = false,
-                        rotateGesturesEnabled = false,
-                        tiltGesturesEnabled = false,
-                        isLogoEnabled = false,
-                    ),
-                    properties = MapProperties(maxZoom = 12.0)
-                ) {
-                    if (logEntries.isNotEmpty()) {
-                        val polylinePoints: List<LatLng> =
-                            logEntries.map { entry -> LatLng(entry.latitude, entry.longitude) }
-                        logEntries.forEach { entry ->
-                            Circle(
-                                center = LatLng(entry.latitude, entry.longitude),
-                                radius = 20.0f,
-                                opacity = 0.0f,
-                                onClick = { selectedEntry = entry },
-                            )
-                            Circle(
-                                center = LatLng(entry.latitude, entry.longitude),
-                                radius = 7.0f,
-                                color = MaterialTheme.colorScheme.primary.toRgbHexString(),
+                if (showContent) {
+                    MapLibre(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                            //.alpha(if (showContent) 1f else 0f),
+                        styleBuilder = Style.Builder()
+                            .fromUri(getThemedMapStyle(settingsUiState.selectedTheme)),
+                        cameraPosition = cameraPosition.value,
+                        locationStyling = LocationStyling(
+                            foregroundTintColor = MaterialTheme.colorScheme.primary.toArgb(),
+                            backgroundTintColor = MaterialTheme.colorScheme.secondary.toArgb(),
+                        ),
+                        uiSettings = UiSettings(
+                            isAttributionEnabled = false,
+                            rotateGesturesEnabled = false,
+                            tiltGesturesEnabled = false,
+                            isLogoEnabled = false,
+                        ),
+                        properties = MapProperties(maxZoom = 12.0)
+                    ) {
+                        if (logEntries.isNotEmpty()) {
+                            val polylinePoints: List<LatLng> =
+                                logEntries.map { entry -> LatLng(entry.latitude, entry.longitude) }
+                            logEntries.forEach { entry ->
+                                Circle(
+                                    center = LatLng(entry.latitude, entry.longitude),
+                                    radius = 20.0f,
+                                    opacity = 0.0f,
+                                    onClick = { selectedEntry = entry },
+                                )
+                                Circle(
+                                    center = LatLng(entry.latitude, entry.longitude),
+                                    radius = 7.0f,
+                                    color = MaterialTheme.colorScheme.primary.toRgbHexString(),
+                                )
+                            }
+                            // Either ramani-maps or maplibre has a bug in the dashed line renderer
+                            // Gets stuck solid when zooming way in, then way out or culled and re-rendered
+                            Polyline(
+                                points = polylinePoints,
+                                color = MaterialTheme.colorScheme.tertiary.toRgbHexString(),
+                                lineWidth = 2f
                             )
                         }
-                        // Either ramani-maps or maplibre has a bug in the dashed line renderer
-                        // Gets stuck solid when zooming way in, then way out or culled and re-rendered
-                        Polyline(
-                            points = polylinePoints,
-                            color = MaterialTheme.colorScheme.tertiary.toRgbHexString(),
-                            lineWidth = 2f
-                        )
                     }
-                }
-                selectedEntry?.let { entry ->
-                    PinDialog(
-                        items = listOf(
-                        "Date" to entry.date,
-                        "Time" to entry.time,
-                        "Speed" to String.format(
-                            Locale.getDefault(), "%.1fkn", speedToKnots(entry.speed)
-                        ),
-                        "Heading" to String.format(
-                            Locale.getDefault(), "%.1f°", entry.bearing
-                        ),
-                        "Latitude" to doubleToDMS(entry.latitude, true),
-                        "Longitude" to doubleToDMS(entry.longitude, false)
-                    ),
-                        onConfirm = { selectedEntry = null },
-                        onDismiss = { selectedEntry = null },
-                        actionButtonText = "Delete",
-                        onAction = {
-                            logViewModel.deleteLogEntry(entry)
-                            selectedEntry = null
-                        })
+                    selectedEntry?.let { entry ->
+                        PinDialog(
+                            items = listOf(
+                                "Date" to entry.date,
+                                "Time" to entry.time,
+                                "Speed" to String.format(
+                                    Locale.getDefault(), "%.1fkn", speedToKnots(entry.speed)
+                                ),
+                                "Heading" to String.format(
+                                    Locale.getDefault(), "%.1f°", entry.bearing
+                                ),
+                                "Latitude" to doubleToDMS(entry.latitude, true),
+                                "Longitude" to doubleToDMS(entry.longitude, false)
+                            ),
+                            onConfirm = { selectedEntry = null },
+                            onDismiss = { selectedEntry = null },
+                            actionButtonText = "Delete",
+                            onAction = {
+                                logViewModel.deleteLogEntry(entry)
+                                selectedEntry = null
+                            })
+                    }
                 }
             }
             //FloatingActionButton(
@@ -175,14 +179,14 @@ fun ChartScreen(
                         text = "",
                         onClick = { },
                         modifier = Modifier.weight(1.0f),
-                        containerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
                         enabled = false
                     )
                     ButtonCard(
                         text = "",
                         onClick = { },
                         modifier = Modifier.weight(1.0f),
-                        containerColor = Color.Transparent,
+                        disabledContainerColor = Color.Transparent,
                         enabled = false
                     )
                 }

@@ -4,12 +4,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.bsi.breezeplot.ui.components.LogEntryCard
 import com.bsi.breezeplot.ui.components.PinDialog
-import com.bsi.breezeplot.ui.components.SettingsDialog
 import com.bsi.breezeplot.ui.screens.DashboardLayout
 import com.bsi.breezeplot.ui.screens.LogLayout
 import com.bsi.breezeplot.ui.screens.SettingsLayout
 import com.bsi.breezeplot.ui.theme.BreezePlotTheme
-import com.bsi.breezeplot.utils.doubleToDMS
+import com.bsi.breezeplot.utilities.doubleToDMS
 import com.bsi.breezeplot.viewmodels.LogEntry
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -97,18 +96,6 @@ fun BarometerLogPreview() {
                 "" to ""
             ), onConfirm = { null }, onDismiss = { null }, actionButtonText = "Add entry"
         )
-    }
-}
-
-@Preview
-@Composable
-fun TogglePreview() {
-    BreezePlotTheme {
-        SettingsDialog(
-            items = listOf(
-                "Keep screen on" to true,
-                "Run in background" to false,
-            ), onConfirm = { null }, onDismiss = { null })
     }
 }
 

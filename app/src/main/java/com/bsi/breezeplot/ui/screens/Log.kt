@@ -4,6 +4,9 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,12 +19,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -33,25 +36,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathFillType.Companion.NonZero
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap.Companion.Round
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.bsi.breezeplot.DATE_FORMAT
-import com.bsi.breezeplot.viewmodels.GpsViewModel
-import com.bsi.breezeplot.viewmodels.LogEntry
-import com.bsi.breezeplot.viewmodels.LogViewModel
 import com.bsi.breezeplot.ui.components.ButtonCard
 import com.bsi.breezeplot.ui.components.ConfirmationDialog
 import com.bsi.breezeplot.ui.components.LogEntryCard
 import com.bsi.breezeplot.ui.components.SwipeItem
+import com.bsi.breezeplot.ui.graphics.FilledWave
 import com.bsi.breezeplot.ui.graphics.wavyLines
+import com.bsi.breezeplot.utilities.DATE_FORMAT
+import com.bsi.breezeplot.viewmodels.GpsViewModel
+import com.bsi.breezeplot.viewmodels.LogEntry
+import com.bsi.breezeplot.viewmodels.LogViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -59,11 +56,44 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 @Composable
+private fun LogEntryItem(
+    modifier: Modifier, entry: LogEntry, onSwipeDismiss: (LogEntry) -> Unit
+) {
+    LaunchedEffect(Unit) {}
+    Box(modifier = modifier) {
+        SwipeItem(swipeAction = { onSwipeDismiss(entry) }) {
+            LogEntryCard(
+                entry = entry, modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .padding(top = 12.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun LogList(
+    listState: LazyListState,
+    logEntries: List<LogEntry>,
+    visible: Boolean,
+    onSwipeDismiss: (LogEntry) -> Unit
+) {
+    AnimatedVisibility(
+        visible = visible, enter = fadeIn(), exit = ExitTransition.None
+    ) {
+        LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+            itemsIndexed(
+                items = logEntries, key = { _, entry -> entry.id }) { index, entry ->
+                LogEntryItem(Modifier.animateItem(), entry, onSwipeDismiss)
+            }
+            item { Spacer(modifier = Modifier.height(16.dp)) }
+        }
+    }
+}
+
+@Composable
 fun LogScreen(gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewModel = viewModel()) {
-    val latitude by gpsViewModel.latitude.collectAsState()
-    val longitude by gpsViewModel.longitude.collectAsState()
-    val speed by gpsViewModel.speed.collectAsState()
-    val bearing by gpsViewModel.bearing.collectAsState()
+    val gpsUiState by gpsViewModel.uiState.collectAsState()
     val showClearDialog = remember { mutableStateOf(false) }
     val showExportDialog = remember { mutableStateOf(false) }
     val logEntries by logViewModel.persistedLogEntries.collectAsState()
@@ -84,9 +114,14 @@ fun LogScreen(gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewMod
         })
 
     LogLayout(
+        gpsUiState.hasGpsAccuracy,
         { showExportDialog.value = true },
         { logViewModel.deleteLogEntry(it) },
-        { logViewModel.addLogEntry(latitude, longitude, speed, bearing) },
+        {
+            logViewModel.addLogEntry(
+                gpsUiState.latitude, gpsUiState.longitude, gpsUiState.speed, gpsUiState.bearing
+            )
+        },
         { showClearDialog.value = true },
         logEntries
     )
@@ -110,6 +145,7 @@ fun LogScreen(gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewMod
 
 @Composable
 fun LogLayout(
+    hasGpsAccuracy: Boolean = true,
     onPressExport: () -> Unit = {},
     onSwipeDismiss: (LogEntry) -> Unit = {},
     onPressAdd: () -> Unit = {},
@@ -118,7 +154,12 @@ fun LogLayout(
 ) {
     var previousSize by remember { mutableIntStateOf(logEntries.size) }
     val listState = rememberLazyListState()
+    var showContent by remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) {
+        delay(400) // Let screen animation complete while map loads
+        showContent = true
+    }
     LaunchedEffect(logEntries.size) {
         if (logEntries.size > previousSize) {
             listState.animateScrollToItem(0)
@@ -128,77 +169,41 @@ fun LogLayout(
     Surface(
         modifier = Modifier
             .fillMaxSize()
-            .combinedClickable(onLongClick = onPressExport, onClick = {}),
-        color = MaterialTheme.colorScheme.background
+            .combinedClickable(
+                onLongClick = onPressExport, onClick = {}, hapticFeedbackEnabled = false
+            ), color = MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier.systemBarsPadding()
         ) {
-            if (logEntries.isEmpty()) {
-                Box(
-                    contentAlignment = Alignment.Center,
+            // Entry list
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = wavyLines,
+                    contentDescription = "Wavy lines",
+                    tint = MaterialTheme.colorScheme.outline,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .weight(1f)
-                ) {
-                    Icon(
-                        imageVector = wavyLines,
-                        contentDescription = "Wavy lines",
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                    )
-                    //Text(
-                    //    "No log entries.",
-                    //    color = MaterialTheme.colorScheme.onBackground,
-                    //    style = MaterialTheme.typography.bodySmall
-                    //)
-                }
-            } else {
-                // Entry list
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
                         .fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = wavyLines,
-                        contentDescription = "Wavy lines",
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                    )
-                    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                        itemsIndexed(
-                            items = logEntries, key = { _, entry -> entry.id }) { index, entry ->
-                            // Entry item
-                            Box(modifier = Modifier.animateItem()) {
-                                SwipeItem(
-                                    swipeAction = { onSwipeDismiss(entry) }) {
-                                    LogEntryCard(
-                                        entry = entry,
-                                        modifier = Modifier
-                                            .padding(horizontal = 12.dp)
-                                            .padding(top = 12.dp)
-                                    )
-                                }
-                            }
-                        }
-                        item { Spacer(modifier = Modifier.height(16.dp)) }
-                    }
-                    FilledWave(
-                        Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                    )
-                }
+                        .align(Alignment.BottomCenter)
+                )
+                LogList(listState, logEntries, showContent, onSwipeDismiss)
+                FilledWave(
+                    Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                )
             }
             // Button row
             Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ButtonCard(
-                    text = "Add", onClick = onPressAdd, modifier = Modifier.weight(1.0f)
+                    text = "Add",
+                    onClick = onPressAdd,
+                    modifier = Modifier.weight(1.0f),
+                    enabled = hasGpsAccuracy
                 )
                 ButtonCard(
                     text = "Clear", onClick = onPressClear, modifier = Modifier.weight(1.0f)
@@ -206,51 +211,4 @@ fun LogLayout(
             }
         }
     }
-}
-
-@Composable
-fun FilledWave(modifier: Modifier = Modifier) {
-    val wavyFill = ImageVector.Builder(
-        name = "WavyFill",
-        defaultWidth = 1024.0.dp,
-        defaultHeight = 384.0.dp,
-        viewportWidth = 270.93f,
-        viewportHeight = 101.6f
-    ).apply {
-        path(
-            fill = SolidColor(MaterialTheme.colorScheme.background), pathFillType = NonZero
-        ) {
-            moveTo(0.0f, 93.14f)
-            lineTo(270.93f, 93.14f)
-            lineTo(270.93f, 101.6f)
-            lineTo(0.0f, 101.6f)
-            close()
-        }
-        path(
-            fill = SolidColor(MaterialTheme.colorScheme.background),
-            stroke = SolidColor(MaterialTheme.colorScheme.outline),
-            strokeLineWidth = 1f,
-            strokeLineCap = Round,
-            strokeLineJoin = StrokeJoin.Companion.Round,
-            strokeLineMiter = 4.0f,
-            pathFillType = NonZero
-        ) {
-            moveToRelative(0.0f, 93.14f)
-            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
-            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
-            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
-            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
-            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
-            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
-            reflectiveCurveToRelative(25.4f, -16.93f, 33.87f, -16.93f)
-            curveToRelative(8.47f, 0.0f, 18.63f, 16.6f, 33.87f, 16.93f)
-        }
-    }.build()
-
-    Icon(
-        imageVector = wavyFill,
-        contentDescription = "Wavy lines",
-        tint = Color.Unspecified,
-        modifier = modifier
-    )
 }

@@ -30,17 +30,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.bsi.breezeplot.AppDestinations
-import com.bsi.breezeplot.DATE_FORMAT
-import com.bsi.breezeplot.TIME_FORMAT
+import com.bsi.breezeplot.ui.AppDestinations
 import com.bsi.breezeplot.ui.components.ButtonCard
 import com.bsi.breezeplot.ui.components.ConfirmationDialog
 import com.bsi.breezeplot.ui.components.PinDialog
 import com.bsi.breezeplot.ui.components.TitleCard
 import com.bsi.breezeplot.ui.graphics.wavyLines
-import com.bsi.breezeplot.utils.distanceToNauticalMiles
-import com.bsi.breezeplot.utils.doubleToDMS
-import com.bsi.breezeplot.utils.speedToKnots
+import com.bsi.breezeplot.utilities.DATE_FORMAT
+import com.bsi.breezeplot.utilities.TIME_FORMAT
+import com.bsi.breezeplot.utilities.distanceToNauticalMiles
+import com.bsi.breezeplot.utilities.doubleToDMS
+import com.bsi.breezeplot.utilities.speedToKnots
 import com.bsi.breezeplot.viewmodels.BarometerViewModel
 import com.bsi.breezeplot.viewmodels.GpsViewModel
 import java.time.Duration
@@ -48,7 +48,7 @@ import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.Locale
 
-fun formatChronometer(color: Color, zonedDateTime: ZonedDateTime): AnnotatedString {
+private fun formatChronometer(color: Color, zonedDateTime: ZonedDateTime): AnnotatedString {
     val format = buildAnnotatedString {
         withStyle(style = SpanStyle(color = color, fontSize = 18.sp)) {
             append(zonedDateTime.format(DATE_FORMAT) + "\n")
@@ -60,7 +60,7 @@ fun formatChronometer(color: Color, zonedDateTime: ZonedDateTime): AnnotatedStri
     return format
 }
 
-fun formatBarometer(locale: Locale, pressure: Float): AnnotatedString {
+private fun formatBarometer(locale: Locale, pressure: Float): AnnotatedString {
     val format = buildAnnotatedString {
         append(String.format(locale, "%.1f", pressure))
         withStyle(style = SpanStyle(fontSize = 18.sp)) { append("mb") }
@@ -68,7 +68,7 @@ fun formatBarometer(locale: Locale, pressure: Float): AnnotatedString {
     return format
 }
 
-fun formatSpeed(locale: Locale, speed: Float): AnnotatedString {
+private fun formatSpeed(locale: Locale, speed: Float): AnnotatedString {
     val format = buildAnnotatedString {
         append(String.format(locale, "%.1f", speedToKnots(speed)))
         withStyle(style = SpanStyle(fontSize = 18.sp)) { append("kn") }
@@ -76,21 +76,46 @@ fun formatSpeed(locale: Locale, speed: Float): AnnotatedString {
     return format
 }
 
-fun formatHeading(locale: Locale, heading: Float): String {
+private fun formatHeading(locale: Locale, heading: Float): String {
     return String.format(locale, "%.1f°", heading)
 }
 
-fun formatCoordinates(latitude: Double, longitude: Double): String {
+private fun formatCoordinates(latitude: Double, longitude: Double): String {
     return "${doubleToDMS(latitude, true)}\n${doubleToDMS(longitude, false)}"
 
 }
 
-fun formatTripMeter(locale: Locale, trip: Float): AnnotatedString {
+private fun formatTripMeter(locale: Locale, trip: Float): AnnotatedString {
     val format = buildAnnotatedString {
         append(String.format(locale, "%.1f", distanceToNauticalMiles(trip)))
         withStyle(style = SpanStyle(fontSize = 18.sp)) { append("NM") }
     }
     return format
+}
+
+private fun formatPressureHistory(
+    pressureHistory: List<Pair<Instant, Float>>,
+    expirationHour: Long,
+    maxItems: Int
+): List<Pair<String, String>> {
+    val now = Instant.now()
+    val tooLate = Duration.ofHours(expirationHour)
+    val itemsToDisplay = pressureHistory.filter { (instant, _) ->
+        Duration.between(instant, now) < tooLate
+    }.map { (instant, pressure) ->
+        val age = Duration.between(instant, now)
+        val hours = age.toHours()
+        val minutes = age.minusHours(hours).toMinutes()
+        val timeString = "-${hours}h ${minutes}m"
+        val pressureString = "%.1fmb".format(pressure)
+
+        timeString to pressureString
+    }.toMutableList().apply {
+        while (size < maxItems) {
+            add("" to "")
+        }
+    }
+    return itemsToDisplay
 }
 
 @Composable
@@ -99,14 +124,7 @@ fun DashboardScreen(
     gpsViewModel: GpsViewModel = viewModel(),
     barometerViewModel: BarometerViewModel = viewModel()
 ) {
-    val systemUTC by gpsViewModel.systemUtcTime.collectAsState()
-    val speed by gpsViewModel.speed.collectAsState()
-    val heading by gpsViewModel.bearing.collectAsState()
-    val latitude by gpsViewModel.latitude.collectAsState()
-    val longitude by gpsViewModel.longitude.collectAsState()
-    val hasGpsAccuracy by gpsViewModel.hasGpsAccuracy.collectAsState()
-    val hasClusterAccuracy by gpsViewModel.hasClusterAccuracy.collectAsState()
-    val trip by gpsViewModel.tripDistance.collectAsState()
+    val gpsUiState by gpsViewModel.uiState.collectAsState()
     val hasBarometer by barometerViewModel.hasBarometer.collectAsState()
     val hasBarometerAccuracy by barometerViewModel.hasBarometerAccuracy.collectAsState()
     val currentPressure by barometerViewModel.currentPressure.collectAsState()
@@ -123,38 +141,25 @@ fun DashboardScreen(
         { showBarometerDialog.value = true },
         { showTripDialog.value = true },
         { showSettingsDialog.value = true },
-        hasGpsAccuracy,
-        hasClusterAccuracy,
+        gpsUiState.hasGpsAccuracy,
+        gpsUiState.hasClusterAccuracy,
         hasBarometer,
         hasBarometerAccuracy,
-        formatChronometer(dateColor, systemUTC),
+        formatChronometer(dateColor, gpsUiState.systemUtcTime),
         formatBarometer(locale, currentPressure),
-        formatSpeed(locale, speed),
-        formatHeading(locale, heading),
-        formatCoordinates(latitude, longitude),
-        formatTripMeter(locale, trip)
+        formatSpeed(locale, gpsUiState.speed),
+        formatHeading(locale, gpsUiState.bearing),
+        formatCoordinates(gpsUiState.latitude, gpsUiState.longitude),
+        formatTripMeter(locale, gpsUiState.tripDistance)
     )
     // Dialog boxes
     if (showBarometerDialog.value) {
-        val now = Instant.now()
-        val tooLate = Duration.ofHours(barometerViewModel.tooLateHours)
-        val itemsToDisplay = pressureHistory.filter { (instant, _) ->
-            Duration.between(instant, now) < tooLate
-        }.map { (instant, pressure) ->
-            val age = Duration.between(instant, now)
-            val hours = age.toHours()
-            val minutes = age.minusHours(hours).toMinutes()
-            val timeString = "-${hours}h ${minutes}m"
-            val pressureString = "%.1fmb".format(pressure)
-
-            timeString to pressureString
-        }.toMutableList().apply {
-            while (size < barometerViewModel.maxHistoryItems) {
-                add("" to "")
-            }
-        }
         PinDialog(
-            items = itemsToDisplay,
+            items = formatPressureHistory(
+                pressureHistory,
+                barometerViewModel.tooLateHours,
+                barometerViewModel.maxHistoryItems
+            ),
             onConfirm = { showBarometerDialog.value = false },
             onDismiss = { showBarometerDialog.value = false },
             onAction = {
@@ -207,7 +212,11 @@ fun DashboardLayout(
     Surface(
         Modifier
             .fillMaxSize()
-            .combinedClickable(onLongClick = onPressSettings, onClick = {}),
+            .combinedClickable(
+                onLongClick = onPressSettings,
+                onClick = {},
+                hapticFeedbackEnabled = false
+            ),
         color = MaterialTheme.colorScheme.background
     ) {
         Column(
@@ -265,7 +274,7 @@ fun DashboardLayout(
                         modifier = Modifier
                             .clip(RoundedCornerShape(pad))
                             .combinedClickable(onClick = onPressTripMeter),
-                        dataColor = gpsDataColor
+                        dataColor = MaterialTheme.colorScheme.primary
                     )
                 }
             }

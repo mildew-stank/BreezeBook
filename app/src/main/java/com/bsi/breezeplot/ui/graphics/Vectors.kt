@@ -138,6 +138,53 @@ val wavyLines = ImageVector.Builder(
     }
 }.build()
 
+@Composable
+fun FilledWave(modifier: Modifier = Modifier) {
+    val wavyFill = ImageVector.Builder(
+        name = "WavyFill",
+        defaultWidth = 1024.0.dp,
+        defaultHeight = 384.0.dp,
+        viewportWidth = 270.93f,
+        viewportHeight = 101.6f
+    ).apply {
+        path(
+            fill = SolidColor(MaterialTheme.colorScheme.background), pathFillType = NonZero
+        ) {
+            moveTo(0.0f, 93.14f)
+            lineTo(270.93f, 93.14f)
+            lineTo(270.93f, 101.6f)
+            lineTo(0.0f, 101.6f)
+            close()
+        }
+        path(
+            fill = SolidColor(MaterialTheme.colorScheme.background),
+            stroke = SolidColor(MaterialTheme.colorScheme.outline),
+            strokeLineWidth = 1f,
+            strokeLineCap = Round,
+            strokeLineJoin = StrokeJoin.Companion.Round,
+            strokeLineMiter = 4.0f,
+            pathFillType = NonZero
+        ) {
+            moveToRelative(0.0f, 93.14f)
+            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
+            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
+            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
+            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
+            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
+            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
+            reflectiveCurveToRelative(25.4f, -16.93f, 33.87f, -16.93f)
+            curveToRelative(8.47f, 0.0f, 18.63f, 16.6f, 33.87f, 16.93f)
+        }
+    }.build()
+
+    Icon(
+        imageVector = wavyFill,
+        contentDescription = "Wavy lines",
+        tint = Color.Unspecified,
+        modifier = modifier
+    )
+}
+
 val wavyLinesExtended = ImageVector.Builder(
     name = "WavyLinesExtended",
     defaultWidth = 1024.dp,
