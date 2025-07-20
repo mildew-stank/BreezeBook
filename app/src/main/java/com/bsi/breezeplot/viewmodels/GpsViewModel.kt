@@ -37,7 +37,6 @@ object DistancePrefs {
 data class GpsUiState(
     val hasGpsAccuracy: Boolean = false,
     val hasClusterAccuracy: Boolean = false,
-    val systemUtcTime: ZonedDateTime = ZonedDateTime.now(ZoneOffset.UTC),
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
     val speed: Float = 0.0f,
@@ -53,6 +52,9 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(GpsUiState())
     val uiState: StateFlow<GpsUiState> = _uiState.asStateFlow()
+
+    private val _utcTime = MutableStateFlow(ZonedDateTime.now(ZoneOffset.UTC))
+    val utcTime: StateFlow<ZonedDateTime> = _utcTime.asStateFlow()
 
     private val gnssStatusCallback = object : GnssStatus.Callback() {
         override fun onStopped() {
@@ -71,7 +73,7 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
         }
         viewModelScope.launch {
             while (true) {
-                updateUtcTime()
+                _utcTime.value = ZonedDateTime.now(ZoneOffset.UTC)
                 delay(1000)
             }
         }
@@ -90,10 +92,8 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
                     longitude = lastLon.toDouble()
                 }
             }
+            Log.d("GpsViewModel", "previousLocation init $previousLocation")
         }
-        Log.d(
-            "GpsViewModel", "previousLocation init $previousLocation"
-        )
     }
 
     fun saveTripData() {
@@ -109,60 +109,31 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateLocationData(currentLocation: Location) {
-        if (!currentLocation.hasAccuracy() || currentLocation.accuracy > 30.86f) { // 1 arc seconds
-            _uiState.value = _uiState.value.copy(
-                hasGpsAccuracy = false,
-                hasClusterAccuracy = false
-            )
-            return
-        }
+        val inMotion = currentLocation.hasSpeed() && currentLocation.speed >= 0.51f
         val lastLocation = previousLocation
-        val newState = _uiState.value.copy(
-            hasGpsAccuracy = true,
+        var tripDistance = _uiState.value.tripDistance
+
+        if (lastLocation != null) {
+            val distanceMoved = lastLocation.distanceTo(currentLocation)
+            val movementRecognitionThreshold = max(lastLocation.accuracy, currentLocation.accuracy)
+            if (distanceMoved > movementRecognitionThreshold && distanceMoved >= 185.2f) { // 0.1NM
+                tripDistance += distanceMoved
+                previousLocation = currentLocation
+            }
+        }
+        _uiState.value = _uiState.value.copy(
+            hasGpsAccuracy = currentLocation.hasAccuracy() && currentLocation.accuracy <= 30.86f, // 1 arc second
             latitude = currentLocation.latitude,
-            longitude = currentLocation.longitude
+            longitude = currentLocation.longitude,
+            tripDistance = tripDistance,
+            hasClusterAccuracy = inMotion, // 1kn
+            speed = if (inMotion) currentLocation.speed else 0.0f,
+            bearing = if (currentLocation.hasBearing() && inMotion) currentLocation.bearing else 0.0f
         )
-
-        if (lastLocation == null) {
-            _uiState.value = newState.copy(hasClusterAccuracy = false)
-            previousLocation = currentLocation
-            return
-        }
-        val distanceMoved = lastLocation.distanceTo(currentLocation)
-        val movementRecognitionThreshold = max(lastLocation.accuracy, currentLocation.accuracy)
-
-        if (distanceMoved <= movementRecognitionThreshold) {
-            _uiState.value = newState.copy(hasClusterAccuracy = false)
-            return
-        }
-        if (distanceMoved >= 185.2f) { //0.1NM
-            var tripDistance = newState.tripDistance
-
-            tripDistance += distanceMoved
-            _uiState.value = newState.copy(tripDistance = tripDistance)
-            previousLocation = currentLocation
-        }
-        if (currentLocation.hasSpeed() && currentLocation.speed >= 0.51f) { // 1kn
-            _uiState.value = newState.copy(
-                hasClusterAccuracy = true,
-                speed = currentLocation.speed,
-                bearing = if (currentLocation.hasBearing()) currentLocation.bearing else 0.0f
-            )
-        } else {
-            _uiState.value = newState.copy(
-                hasClusterAccuracy = false,
-                speed = 0.0f,
-                bearing = 0.0f
-            )
-        }
     }
 
     fun resetDistance() {
         _uiState.value = _uiState.value.copy(tripDistance = 0.0f)
-    }
-
-    fun updateUtcTime() {
-        _uiState.value = _uiState.value.copy(systemUtcTime = ZonedDateTime.now(ZoneOffset.UTC))
     }
 
     override fun onCleared() {

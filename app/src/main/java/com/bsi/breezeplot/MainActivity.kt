@@ -1,13 +1,12 @@
 // TODO:
 //  Refactor hierarchy so each screen has one ViewModel that takes from gps/log/barometer classes.
 //  Remove portrait restriction from AndroidManifest and make landscape mode.
-//  Add divider to Log.
 //  Make it harder to accidentally flick dismiss a log card while scrolling.
-//  Add NMEA support to Chart.
+//  Add NMEA support via local wifi to Chart.
 //  Add an option to enable a foreground service. This would allow increased Trip Meter accuracy,
 //   enable reliable Barometer auto-logging, and an anchor alarm.
-//  Refactor screens to use MainTemplate.
-//  +Trip Meter needs a lot more testing. Cut it back to Distance Logged if necessary.
+//  Add divider to Log for separating trip segments.
+//  +Trip Meter still needs testing
 
 package com.bsi.breezeplot
 
@@ -31,14 +30,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.bsi.breezeplot.ui.AppDestinations
-import com.bsi.breezeplot.viewmodels.BarometerViewModel
-import com.bsi.breezeplot.viewmodels.GpsViewModel
-import com.bsi.breezeplot.viewmodels.LogViewModel
 import com.bsi.breezeplot.ui.screens.ChartScreen
 import com.bsi.breezeplot.ui.screens.DashboardScreen
 import com.bsi.breezeplot.ui.screens.LogScreen
 import com.bsi.breezeplot.ui.screens.SettingsScreen
 import com.bsi.breezeplot.ui.theme.BreezePlotTheme
+import com.bsi.breezeplot.viewmodels.BarometerViewModel
+import com.bsi.breezeplot.viewmodels.GpsViewModel
+import com.bsi.breezeplot.viewmodels.LogViewModel
 import com.bsi.breezeplot.viewmodels.SettingsViewModel
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -90,8 +89,7 @@ class MainActivity : ComponentActivity() {
                     enterTransition = { slideInHorizontally(initialOffsetX = { it }) },
                     exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) },
                     popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) },
-                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) }
-                ) {
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) }) {
                     composable(AppDestinations.DASHBOARD_ROUTE) {
                         DashboardScreen(
                             navController = navController,

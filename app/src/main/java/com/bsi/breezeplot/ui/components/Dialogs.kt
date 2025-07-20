@@ -36,12 +36,10 @@ fun PinDialog(
                         ) {
                             Text(
                                 text = name,
-                                color = MaterialTheme.colorScheme.onBackground,
                                 style = MaterialTheme.typography.titleSmall
                             )
                             Text(
                                 text = value,
-                                color = MaterialTheme.colorScheme.onBackground,
                                 style = MaterialTheme.typography.titleSmall
                             )
                         }

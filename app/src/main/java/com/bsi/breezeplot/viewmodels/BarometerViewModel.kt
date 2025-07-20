@@ -23,7 +23,8 @@ import java.time.Instant
 
 object BarometerPrefs {
     const val MAX_HISTORY_ITEMS = 6
-    const val TOO_LATE_HOURS = 6L
+    const val EXPIRY_HOURS = 6L
+    const val AUTO_LOG_MINUTES = 30L
     val INSTANT = List(MAX_HISTORY_ITEMS) { i -> longPreferencesKey("instant_$i") }
     val PRESSURE = List(MAX_HISTORY_ITEMS) { i -> floatPreferencesKey("pressure_$i") }
 }
@@ -48,7 +49,7 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
     val pressureHistory = _pressureHistory.asStateFlow()
 
     val maxHistoryItems = BarometerPrefs.MAX_HISTORY_ITEMS
-    val tooLateHours = BarometerPrefs.TOO_LATE_HOURS
+    val tooLateHours = BarometerPrefs.EXPIRY_HOURS
 
     init {
         if (_hasBarometer.value) {
@@ -61,7 +62,7 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             val prefs = dataStore.data.first()
             val now = Instant.now()
-            val tooOld = Duration.ofHours(BarometerPrefs.TOO_LATE_HOURS)
+            val tooOld = Duration.ofHours(BarometerPrefs.EXPIRY_HOURS)
             val list = mutableListOf<Pair<Instant, Float>>()
             for (i in 0 until BarometerPrefs.MAX_HISTORY_ITEMS) {
                 prefs[BarometerPrefs.INSTANT[i]]?.let { timestamp ->
@@ -81,6 +82,16 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
         if (list.size >= maxHistoryItems) list.removeAt(list.lastIndex)
         list.add(0, Instant.now() to pressure)
         _pressureHistory.value = list
+    }
+
+    fun autoLogPressureReadingToHistory(pressure: Float) {
+        val lastInstant = _pressureHistory.value.firstOrNull()?.first
+        val now = Instant.now()
+        val autoLogTimer = Duration.ofMinutes(BarometerPrefs.AUTO_LOG_MINUTES)
+
+        if (lastInstant == null || Duration.between(lastInstant, now) >= autoLogTimer) {
+            addPressureReadingToHistory(pressure)
+        }
     }
 
     fun savePressureReadingHistory() {

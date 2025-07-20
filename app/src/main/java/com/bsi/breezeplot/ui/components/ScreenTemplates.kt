@@ -22,16 +22,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
+import com.bsi.breezeplot.ui.graphics.FilledWave
 import com.bsi.breezeplot.ui.graphics.wavyLines
 import kotlinx.coroutines.delay
 
 @Composable
 fun MainTemplate(
-    skipContentDelay: Boolean = false,
     enableLongPress: Boolean = false,
     showButtons: Boolean = true,
+    maskBottomWave: Boolean = false,
     buttonTextLeft: String = "Back",
     buttonTextRight: String = "Next",
+    buttonLeftEnabled: Boolean = true,
+    buttonRightEnabled: Boolean = true,
+    onShowContent: () -> Unit = {},
     onClickLeft: () -> Unit = {},
     onClickRight: () -> Unit = {},
     onLongClick: () -> Unit = {},
@@ -40,13 +44,25 @@ fun MainTemplate(
     var showContent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(200)
+        delay(400)
         showContent = true
+        onShowContent()
     }
-    Surface(Modifier.fillMaxSize().combinedClickable(enabled = enableLongPress,onClick = {},
-        onLongClick = onLongClick, hapticFeedbackEnabled = false
-    ), color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.systemBarsPadding()) {
+    Surface(
+        Modifier
+            .fillMaxSize()
+            .combinedClickable(
+                enabled = enableLongPress,
+                onClick = {},
+                onLongClick = onLongClick,
+                hapticFeedbackEnabled = false
+            ), color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
+            Modifier
+                .systemBarsPadding()
+                .padding(top = 12.dp)
+        ) {
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -60,31 +76,37 @@ fun MainTemplate(
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
                 )
-                if (showContent || skipContentDelay) {
-                    content()
+                content()
+                if (maskBottomWave) {
+                    FilledWave(
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                    )
                 }
             }
-        }
-        Row(
-            Modifier
-                .padding(12.dp)
-                .alpha(if (showButtons) 1f else 0f),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            ButtonCard(
-                text = buttonTextLeft,
-                onClick = onClickLeft,
-                modifier = Modifier.weight(1.0f),
-                containerColor = MaterialTheme.colorScheme.surface,
-                enabled = showButtons
-            )
-            ButtonCard(
-                text = buttonTextRight,
-                onClick = onClickRight,
-                modifier = Modifier.weight(1.0f),
-                containerColor = MaterialTheme.colorScheme.surface,
-                enabled = showButtons
-            )
+            Row(
+                Modifier
+                    .padding(12.dp)
+                    .alpha(if (showButtons) 1f else 0f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ButtonCard(
+                    text = buttonTextLeft,
+                    onClick = onClickLeft,
+                    modifier = Modifier.weight(1.0f),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    enabled = buttonLeftEnabled || !showButtons
+                )
+                ButtonCard(
+                    text = buttonTextRight,
+                    onClick = onClickRight,
+                    modifier = Modifier.weight(1.0f),
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    enabled = buttonRightEnabled || !showButtons
+                )
+            }
+
         }
     }
 }

@@ -2,23 +2,16 @@ package com.bsi.breezeplot.ui.screens
 
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -31,11 +24,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.bsi.breezeplot.ui.AppDestinations
-import com.bsi.breezeplot.ui.components.ButtonCard
 import com.bsi.breezeplot.ui.components.ConfirmationDialog
+import com.bsi.breezeplot.ui.components.MainTemplate
 import com.bsi.breezeplot.ui.components.PinDialog
 import com.bsi.breezeplot.ui.components.TitleCard
-import com.bsi.breezeplot.ui.graphics.wavyLines
 import com.bsi.breezeplot.utilities.DATE_FORMAT
 import com.bsi.breezeplot.utilities.TIME_FORMAT
 import com.bsi.breezeplot.utilities.distanceToNauticalMiles
@@ -94,9 +86,7 @@ private fun formatTripMeter(locale: Locale, trip: Float): AnnotatedString {
 }
 
 private fun formatPressureHistory(
-    pressureHistory: List<Pair<Instant, Float>>,
-    expirationHour: Long,
-    maxItems: Int
+    pressureHistory: List<Pair<Instant, Float>>, expirationHour: Long, maxItems: Int
 ): List<Pair<String, String>> {
     val now = Instant.now()
     val tooLate = Duration.ofHours(expirationHour)
@@ -125,6 +115,7 @@ fun DashboardScreen(
     barometerViewModel: BarometerViewModel = viewModel()
 ) {
     val gpsUiState by gpsViewModel.uiState.collectAsState()
+    val utcTime by gpsViewModel.utcTime.collectAsState()
     val hasBarometer by barometerViewModel.hasBarometer.collectAsState()
     val hasBarometerAccuracy by barometerViewModel.hasBarometerAccuracy.collectAsState()
     val currentPressure by barometerViewModel.currentPressure.collectAsState()
@@ -135,6 +126,7 @@ fun DashboardScreen(
     val showTripDialog = remember { mutableStateOf(false) }
     val showSettingsDialog = remember { mutableStateOf(false) }
 
+    barometerViewModel.autoLogPressureReadingToHistory(currentPressure)
     // Main page
     DashboardLayout(
         navController,
@@ -145,7 +137,7 @@ fun DashboardScreen(
         gpsUiState.hasClusterAccuracy,
         hasBarometer,
         hasBarometerAccuracy,
-        formatChronometer(dateColor, gpsUiState.systemUtcTime),
+        formatChronometer(dateColor, utcTime),
         formatBarometer(locale, currentPressure),
         formatSpeed(locale, gpsUiState.speed),
         formatHeading(locale, gpsUiState.bearing),
@@ -156,10 +148,8 @@ fun DashboardScreen(
     if (showBarometerDialog.value) {
         PinDialog(
             items = formatPressureHistory(
-                pressureHistory,
-                barometerViewModel.tooLateHours,
-                barometerViewModel.maxHistoryItems
-            ),
+            pressureHistory, barometerViewModel.tooLateHours, barometerViewModel.maxHistoryItems
+        ),
             onConfirm = { showBarometerDialog.value = false },
             onDismiss = { showBarometerDialog.value = false },
             onAction = {
@@ -209,87 +199,48 @@ fun DashboardLayout(
     val barometerDataColor =
         if (hasBarometerAccuracy) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
 
-    Surface(
-        Modifier
-            .fillMaxSize()
-            .combinedClickable(
-                onLongClick = onPressSettings,
-                onClick = {},
-                hapticFeedbackEnabled = false
-            ),
-        color = MaterialTheme.colorScheme.background
+    MainTemplate(
+        enableLongPress = true,
+        buttonTextLeft = "Log",
+        buttonTextRight = "Chart",
+        onClickLeft = { navController?.navigate(AppDestinations.LOG_ROUTE) },
+        onClickRight = { navController?.navigate(AppDestinations.CHART_ROUTE) },
+        onLongClick = onPressSettings
     ) {
         Column(
-            Modifier
-                .systemBarsPadding()
-                .padding(top = pad),
-            verticalArrangement = Arrangement.SpaceBetween
+            Modifier.padding(horizontal = pad), verticalArrangement = Arrangement.spacedBy(pad)
         ) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = wavyLines,
-                    contentDescription = "Wavy lines",
-                    tint = MaterialTheme.colorScheme.outline,
+            TitleCard("Universal Time", chronometer)
+            if (hasBarometer) {
+                TitleCard(
+                    "Barometer",
+                    barometer,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-                )
-                Column(
-                    Modifier.padding(horizontal = pad),
-                    verticalArrangement = Arrangement.spacedBy(pad)
-                ) {
-                    TitleCard("Universal Time", chronometer)
-                    if (hasBarometer) {
-                        TitleCard(
-                            "Barometer",
-                            barometer,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(pad))
-                                .combinedClickable(onClick = onPressBarometer),
-                            dataColor = barometerDataColor
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(pad)) {
-                        TitleCard(
-                            "Speed",
-                            speed,
-                            modifier = Modifier.weight(1.0f),
-                            dataColor = clusterDataColor
-                        )
-                        TitleCard(
-                            "Heading",
-                            heading,
-                            modifier = Modifier.weight(1.0f),
-                            dataColor = clusterDataColor
-                        )
-                    }
-                    TitleCard("Coordinates", coordinates, dataColor = gpsDataColor)
-                    TitleCard(
-                        "Trip Meter",
-                        trip,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(pad))
-                            .combinedClickable(onClick = onPressTripMeter),
-                        dataColor = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            Row(Modifier.padding(pad), horizontalArrangement = Arrangement.spacedBy(pad)) {
-                ButtonCard(
-                    text = "Log",
-                    onClick = { navController?.navigate(AppDestinations.LOG_ROUTE) },
-                    modifier = Modifier.weight(1.0f)
-                )
-                ButtonCard(
-                    text = "Chart",
-                    onClick = { navController?.navigate(AppDestinations.CHART_ROUTE) },
-                    modifier = Modifier.weight(1.0f)
+                        .clip(RoundedCornerShape(pad))
+                        .combinedClickable(onClick = onPressBarometer),
+                    dataColor = barometerDataColor
                 )
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(pad)) {
+                TitleCard(
+                    "Speed", speed, modifier = Modifier.weight(1.0f), dataColor = clusterDataColor
+                )
+                TitleCard(
+                    "Heading",
+                    heading,
+                    modifier = Modifier.weight(1.0f),
+                    dataColor = clusterDataColor
+                )
+            }
+            TitleCard("Coordinates", coordinates, dataColor = gpsDataColor)
+            TitleCard(
+                "Trip Meter",
+                trip,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(pad))
+                    .combinedClickable(onClick = onPressTripMeter),
+                dataColor = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }
