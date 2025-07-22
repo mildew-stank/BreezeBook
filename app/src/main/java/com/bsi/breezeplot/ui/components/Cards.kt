@@ -153,11 +153,13 @@ fun TitledBorder(
 @Composable
 fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry) {
     val locale = Locale.getDefault()
-    val latitude = doubleToDMS(entry.latitude, true)
-    val longitude = doubleToDMS(entry.longitude, false)
-    val speed = String.format(locale, "%.1fkn", speedToKnots(entry.speed))
-    val bearing = String.format(locale, "%.1f°", entry.bearing)
-    val distance = String.format(locale, "%.2fNM", distanceToNauticalMiles(entry.distance))
+    val latitude = remember(entry.latitude) { doubleToDMS(entry.latitude, true) }
+    val longitude = remember(entry.longitude) { doubleToDMS(entry.longitude, false) }
+    val speed = remember(entry.speed) { String.format(locale, "%.1fkn", speedToKnots(entry.speed)) }
+    val bearing = remember(entry.bearing) { String.format(locale, "%.1f°", entry.bearing) }
+    val distance = remember(entry.distance) {
+        String.format(locale, "%.2fNM", distanceToNauticalMiles(entry.distance))
+    }
     val pad = 12.dp
 
     Card(
@@ -186,12 +188,12 @@ fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry) {
                 Text(
                     text = entry.date,
                     color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall
                 )
                 Text(
                     text = entry.time,
                     color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
@@ -207,12 +209,12 @@ fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry) {
                 Text(
                     text = latitude,
                     color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall
                 )
                 Text(
                     text = longitude,
                     color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
             VerticalDivider()
@@ -220,12 +222,12 @@ fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry) {
                 Text(
                     text = speed,
                     color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall
                 )
                 Text(
                     text = bearing,
                     color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
             VerticalDivider()
@@ -233,7 +235,7 @@ fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry) {
                 Text(
                     text = distance,
                     color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }

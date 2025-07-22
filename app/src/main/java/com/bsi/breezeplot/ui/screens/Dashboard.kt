@@ -117,7 +117,7 @@ fun DashboardScreen(
     val gpsUiState by gpsViewModel.uiState.collectAsState()
     val utcTime by gpsViewModel.utcTime.collectAsState()
     val hasBarometer by barometerViewModel.hasBarometer.collectAsState()
-    val hasBarometerAccuracy by barometerViewModel.hasBarometerAccuracy.collectAsState()
+    val hasBarometerAccuracy by barometerViewModel.hasAccuracy.collectAsState()
     val currentPressure by barometerViewModel.currentPressure.collectAsState()
     val pressureHistory by barometerViewModel.pressureHistory.collectAsState()
     val locale = Locale.getDefault()
@@ -126,7 +126,6 @@ fun DashboardScreen(
     val showTripDialog = remember { mutableStateOf(false) }
     val showSettingsDialog = remember { mutableStateOf(false) }
 
-    barometerViewModel.autoLogPressureReadingToHistory(currentPressure)
     // Main page
     DashboardLayout(
         navController,
@@ -148,7 +147,7 @@ fun DashboardScreen(
     if (showBarometerDialog.value) {
         PinDialog(
             items = formatPressureHistory(
-            pressureHistory, barometerViewModel.tooLateHours, barometerViewModel.maxHistoryItems
+            pressureHistory, barometerViewModel.expiryHours, barometerViewModel.maxHistoryItems
         ),
             onConfirm = { showBarometerDialog.value = false },
             onDismiss = { showBarometerDialog.value = false },

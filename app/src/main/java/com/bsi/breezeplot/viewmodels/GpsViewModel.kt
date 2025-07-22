@@ -9,7 +9,6 @@ import android.location.Location
 import android.location.LocationManager
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -92,7 +91,6 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
                     longitude = lastLon.toDouble()
                 }
             }
-            Log.d("GpsViewModel", "previousLocation init $previousLocation")
         }
     }
 
@@ -116,6 +114,7 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
         if (lastLocation != null) {
             val distanceMoved = lastLocation.distanceTo(currentLocation)
             val movementRecognitionThreshold = max(lastLocation.accuracy, currentLocation.accuracy)
+
             if (distanceMoved > movementRecognitionThreshold && distanceMoved >= 185.2f) { // 0.1NM
                 tripDistance += distanceMoved
                 previousLocation = currentLocation
@@ -137,7 +136,7 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     override fun onCleared() {
-        saveTripData()
         super.onCleared()
+        saveTripData()
     }
 }

@@ -35,6 +35,10 @@ import com.bsi.breezeplot.ui.components.LogEntryCard
 import com.bsi.breezeplot.ui.components.MainTemplate
 import com.bsi.breezeplot.ui.components.SwipeItem
 import com.bsi.breezeplot.utilities.DATE_FORMAT
+import com.bsi.breezeplot.utilities.distanceToNauticalMiles
+import com.bsi.breezeplot.utilities.doubleToDMS
+import com.bsi.breezeplot.utilities.speedToKnots
+import com.bsi.breezeplot.viewmodels.FormattedLogEntry
 import com.bsi.breezeplot.viewmodels.GpsViewModel
 import com.bsi.breezeplot.viewmodels.LogEntry
 import com.bsi.breezeplot.viewmodels.LogViewModel
@@ -43,6 +47,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.util.Locale
 
 @Composable
 private fun LogEntryItem(
@@ -87,6 +92,7 @@ fun LogScreen(gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewMod
     val showClearDialog = remember { mutableStateOf(false) }
     val showExportDialog = remember { mutableStateOf(false) }
     val logEntries by logViewModel.persistedLogEntries.collectAsState()
+    val formattedLogEntries by logViewModel.formattedLogEntries.collectAsState()
     val context = LocalContext.current
     val coroutineScope: CoroutineScope = rememberCoroutineScope()
     val logbookExportLauncher = rememberLauncherForActivityResult(

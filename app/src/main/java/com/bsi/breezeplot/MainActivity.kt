@@ -1,12 +1,13 @@
 // TODO:
-//  Refactor hierarchy so each screen has one ViewModel that takes from gps/log/barometer classes.
-//  Remove portrait restriction from AndroidManifest and make landscape mode.
+//  Design landscape layout and remove portrait restriction from AndroidManifest.
 //  Make it harder to accidentally flick dismiss a log card while scrolling.
 //  Add NMEA support via local wifi to Chart.
 //  Add an option to enable a foreground service. This would allow increased Trip Meter accuracy,
 //   enable reliable Barometer auto-logging, and an anchor alarm.
 //  Add divider to Log for separating trip segments.
-//  +Trip Meter still needs testing
+//  +Little more testing for trip meter.
+//  +Make sure the barometer readings made with screen off before it goes to sleep are good.
+//  ++Smooth out log page animations again, this time without such a large wait for them to appear.
 
 package com.bsi.breezeplot
 
@@ -120,9 +121,11 @@ class MainActivity : ComponentActivity() {
     private fun requestLocationUpdates() {
         val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         var locationCallback = object : LocationCallback() {
+
             override fun onLocationResult(locationResult: LocationResult) {
                 super.onLocationResult(locationResult)
                 val location = locationResult.lastLocation
+
                 if (location != null) {
                     gpsViewModel.updateLocationData(location)
                 }
@@ -143,6 +146,11 @@ class MainActivity : ComponentActivity() {
         } else {
             requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        barometerViewModel.flagEarlyWake()
     }
 
     override fun onStop() {

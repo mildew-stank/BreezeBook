@@ -6,6 +6,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.SystemClock
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -24,7 +25,7 @@ import java.time.Instant
 object BarometerPrefs {
     const val MAX_HISTORY_ITEMS = 6
     const val EXPIRY_HOURS = 6L
-    const val AUTO_LOG_MINUTES = 30L
+    const val AUTO_LOG_MINUTES = 1L
     val INSTANT = List(MAX_HISTORY_ITEMS) { i -> longPreferencesKey("instant_$i") }
     val PRESSURE = List(MAX_HISTORY_ITEMS) { i -> floatPreferencesKey("pressure_$i") }
 }
@@ -35,12 +36,13 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
     private val sensorManager =
         application.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val pressureSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE)
+    private var isEarlyWake = true
 
     private val _currentPressure = MutableStateFlow(0f)
     val currentPressure = _currentPressure.asStateFlow()
 
-    private val _hasBarometerAccuracy = MutableStateFlow(false)
-    val hasBarometerAccuracy = _hasBarometerAccuracy.asStateFlow()
+    private val _hasAccuracy = MutableStateFlow(false)
+    val hasAccuracy = _hasAccuracy.asStateFlow()
 
     private val _hasBarometer = MutableStateFlow(pressureSensor != null)
     val hasBarometer = _hasBarometer.asStateFlow()
@@ -49,7 +51,7 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
     val pressureHistory = _pressureHistory.asStateFlow()
 
     val maxHistoryItems = BarometerPrefs.MAX_HISTORY_ITEMS
-    val tooLateHours = BarometerPrefs.EXPIRY_HOURS
+    val expiryHours = BarometerPrefs.EXPIRY_HOURS
 
     init {
         if (_hasBarometer.value) {
@@ -79,18 +81,39 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun addPressureReadingToHistory(pressure: Float) {
         val list = _pressureHistory.value.toMutableList()
-        if (list.size >= maxHistoryItems) list.removeAt(list.lastIndex)
+
+        if (list.size >= maxHistoryItems) {
+            list.removeAt(list.lastIndex)
+        }
         list.add(0, Instant.now() to pressure)
         _pressureHistory.value = list
     }
 
-    fun autoLogPressureReadingToHistory(pressure: Float) {
-        val lastInstant = _pressureHistory.value.firstOrNull()?.first
+    fun tryAutoLogPressureReadingToHistory(pressure: Float, timestamp: Long): Boolean {
+        if (isEarlyWake) {
+            return false
+        }
+        val lastLog = _pressureHistory.value.firstOrNull()?.first
         val now = Instant.now()
         val autoLogTimer = Duration.ofMinutes(BarometerPrefs.AUTO_LOG_MINUTES)
 
-        if (lastInstant == null || Duration.between(lastInstant, now) >= autoLogTimer) {
+        if (lastLog == null || Duration.between(lastLog, now) >= autoLogTimer) {
+            val ageMillis = (SystemClock.elapsedRealtimeNanos() - timestamp) / 1_000_000L
+
+            if (!_hasAccuracy.value || ageMillis > 1000) {
+                return false
+            }
             addPressureReadingToHistory(pressure)
+            return true
+        }
+        return false
+    }
+
+    fun flagEarlyWake(durationMillis: Long = 1000L) {
+        isEarlyWake = true
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(durationMillis)
+            isEarlyWake = false
         }
     }
 
@@ -107,19 +130,22 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     override fun onSensorChanged(event: SensorEvent) {
-        if (event.sensor.type == Sensor.TYPE_PRESSURE) {
-            _currentPressure.value = event.values.first()
+        if (event.sensor.type != Sensor.TYPE_PRESSURE) {
+            return
         }
+        _currentPressure.value = event.values.first()
+        tryAutoLogPressureReadingToHistory(_currentPressure.value, event.timestamp)
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
-        if (sensor.type == Sensor.TYPE_PRESSURE) {
-            _hasBarometerAccuracy.value = accuracy > 1
+        if (sensor.type != Sensor.TYPE_PRESSURE) {
+            return
         }
+        _hasAccuracy.value = accuracy > 1
     }
 
     override fun onCleared() {
-        savePressureReadingHistory()
         super.onCleared()
+        savePressureReadingHistory()
     }
 }

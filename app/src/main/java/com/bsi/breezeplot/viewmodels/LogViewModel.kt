@@ -17,6 +17,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.bsi.breezeplot.utilities.DATE_FORMAT
 import com.bsi.breezeplot.utilities.TIME_FORMAT
+import com.bsi.breezeplot.utilities.distanceToNauticalMiles
+import com.bsi.breezeplot.utilities.doubleToDMS
+import com.bsi.breezeplot.utilities.speedToKnots
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,7 +33,19 @@ import java.io.IOException
 import java.io.OutputStreamWriter
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
+import java.util.Locale
 import java.util.UUID
+
+data class FormattedLogEntry(
+    //val id: Long,
+    val date: String,
+    val time: String,
+    val latitude: String,
+    val longitude: String,
+    val speed: String,
+    val bearing: String,
+    val segmentDistance: String
+)
 
 @Entity(tableName = "log_entries")
 data class LogEntry(
@@ -102,9 +117,11 @@ abstract class AppDatabase : RoomDatabase() {
 class LogViewModel(application: Application) : AndroidViewModel(application) {
     private val logRepository: LogRepository
     val persistedLogEntries: StateFlow<List<LogEntry>>
+    val formattedLogEntries: StateFlow<List<FormattedLogEntry>>
 
     init {
         val logEntryDao = AppDatabase.getDatabase(application).logEntryDao()
+
         logRepository = LogRepository(logEntryDao)
         persistedLogEntries = logRepository.allLogEntries
             .map { entries -> calculateSegmentDistances(entries) }
@@ -113,6 +130,13 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = emptyList()
             )
+        formattedLogEntries = persistedLogEntries.map { entries ->
+            entries.map { entry -> formatLogEntry(entry) }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
     }
 
     fun addLogEntry(
@@ -147,6 +171,19 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             logRepository.clearAll()
         }
+    }
+
+    private fun formatLogEntry(entry: LogEntry): FormattedLogEntry {
+        val locale = Locale.getDefault()
+        return FormattedLogEntry(
+            date = entry.date,
+            time = entry.time,
+            latitude = doubleToDMS(entry.latitude, true),
+            longitude = doubleToDMS(entry.longitude, false),
+            speed = String.format(locale, "%.1fkn", speedToKnots(entry.speed)),
+            bearing = String.format(locale, "%.1f°", entry.bearing),
+            segmentDistance = String.format(locale, "%.2fNM", distanceToNauticalMiles(entry.distance))
+        )
     }
 
     private fun calculateSegmentDistances(entries: List<LogEntry>): List<LogEntry> {
