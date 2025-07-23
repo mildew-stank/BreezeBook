@@ -1,10 +1,10 @@
 // TODO:
 //  Design landscape layout and remove portrait restriction from AndroidManifest.
 //  Make it harder to accidentally flick dismiss a log card while scrolling.
-//  Add NMEA support via local wifi to Chart.
 //  Add an option to enable a foreground service. This would allow increased Trip Meter accuracy,
-//   enable reliable Barometer auto-logging, and an anchor alarm.
+//   reliable Barometer auto-logging, and an anchor alarm.
 //  Add divider to Log for separating trip segments.
+//  Add NMEA support for local AIS to Chart.
 
 package com.bsi.breezeplot
 

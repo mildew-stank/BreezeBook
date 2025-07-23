@@ -23,7 +23,7 @@ import java.time.Duration
 import java.time.Instant
 
 object BarometerPrefs {
-    const val MAX_HISTORY_ITEMS = 6
+    const val MAX_HISTORY_ITEMS = 7
     val INSTANT = List(MAX_HISTORY_ITEMS) { i -> longPreferencesKey("instant_$i") }
     val PRESSURE = List(MAX_HISTORY_ITEMS) { i -> floatPreferencesKey("pressure_$i") }
 }
@@ -65,6 +65,7 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
             val now = Instant.now()
             val tooOld = Duration.ofHours(expiryHours)
             val list = mutableListOf<Pair<Instant, Float>>()
+
             for (i in 0 until BarometerPrefs.MAX_HISTORY_ITEMS) {
                 prefs[BarometerPrefs.INSTANT[i]]?.let { timestamp ->
                     prefs[BarometerPrefs.PRESSURE[i]]?.let { pressure ->
