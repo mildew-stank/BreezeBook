@@ -31,6 +31,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
+    private var _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    //private val _utcTime = MutableStateFlow(ZonedDateTime.now(ZoneOffset.UTC))
+    //val utcTime: StateFlow<ZonedDateTime> = _utcTime.asStateFlow()
+
     companion object {
         private val KEEP_SCREEN_ON_KEY = booleanPreferencesKey("keep_screen_on")
         private val RUN_IN_BACKGROUND_KEY = booleanPreferencesKey("run_in_background")
@@ -61,6 +67,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                     selectedTheme = selectedTheme
                 )
             }
+            _isLoading.value = false
         }
     }
 

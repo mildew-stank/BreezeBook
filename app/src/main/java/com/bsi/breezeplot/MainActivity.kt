@@ -18,12 +18,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.app.ActivityCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -54,22 +56,25 @@ class MainActivity : ComponentActivity() {
                 ).show()
             }
         }
-    private lateinit var gpsViewModel: GpsViewModel
-    private lateinit var logViewModel: LogViewModel
-    private lateinit var barometerViewModel: BarometerViewModel
     private lateinit var settingsViewModel: SettingsViewModel
+    private lateinit var gpsViewModel: GpsViewModel
+    private lateinit var barometerViewModel: BarometerViewModel
+    private lateinit var logViewModel: LogViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+
         super.onCreate(savedInstanceState)
-        gpsViewModel = GpsViewModel(application)
-        logViewModel = LogViewModel(application)
-        barometerViewModel = BarometerViewModel(application)
         settingsViewModel = SettingsViewModel(application)
+        gpsViewModel = GpsViewModel(application)
+        barometerViewModel = BarometerViewModel(application)
+        logViewModel = LogViewModel(application)
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
             val settingsState by settingsViewModel.uiState.collectAsState()
 
+            splashScreen.setKeepOnScreenCondition { settingsViewModel.isLoading.value }
             LaunchedEffect(Unit) {
                 requestLocationUpdates()
             }
@@ -84,10 +89,26 @@ class MainActivity : ComponentActivity() {
                 NavHost(
                     navController = navController,
                     startDestination = AppDestinations.DASHBOARD_ROUTE,
-                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) },
-                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) },
-                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) },
-                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) }) {
+                    enterTransition = {
+                        slideInHorizontally(
+                            initialOffsetX = { it }, animationSpec = tween(200)
+                        )
+                    },
+                    exitTransition = {
+                        slideOutHorizontally(
+                            targetOffsetX = { -it }, animationSpec = tween(200)
+                        )
+                    },
+                    popEnterTransition = {
+                        slideInHorizontally(
+                            initialOffsetX = { -it }, animationSpec = tween(200)
+                        )
+                    },
+                    popExitTransition = {
+                        slideOutHorizontally(
+                            targetOffsetX = { it }, animationSpec = tween(200)
+                        )
+                    }) {
                     composable(AppDestinations.DASHBOARD_ROUTE) {
                         DashboardScreen(
                             navController = navController,

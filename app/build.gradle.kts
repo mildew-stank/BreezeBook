@@ -39,6 +39,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.room.compiler)
     implementation(libs.ramani.maplibre)
     implementation(libs.play.services.location)

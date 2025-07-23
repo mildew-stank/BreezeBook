@@ -115,7 +115,7 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         return formattedLogEntries.value.find { it.id == id }
     }
 
-    private fun formatLogEntry(entry: LogEntry): FormattedLogEntry {
+    fun formatLogEntry(entry: LogEntry): FormattedLogEntry {
         val locale = Locale.getDefault()
 
         return FormattedLogEntry(

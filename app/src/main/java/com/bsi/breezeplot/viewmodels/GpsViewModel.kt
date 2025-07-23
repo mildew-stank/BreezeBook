@@ -107,6 +107,9 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updateLocationData(currentLocation: Location) {
+        if (!currentLocation.hasAccuracy() && currentLocation.accuracy > 30.86f) { // 1 arc second
+            return
+        }
         val inMotion = currentLocation.hasSpeed() && currentLocation.speed >= 0.51f
         val lastLocation = previousLocation
         var tripDistance = _uiState.value.tripDistance
@@ -121,7 +124,7 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         _uiState.value = _uiState.value.copy(
-            hasGpsAccuracy = currentLocation.hasAccuracy() && currentLocation.accuracy <= 30.86f, // 1 arc second
+            hasGpsAccuracy = true,
             latitude = currentLocation.latitude,
             longitude = currentLocation.longitude,
             tripDistance = tripDistance,

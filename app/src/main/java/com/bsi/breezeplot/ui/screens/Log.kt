@@ -147,7 +147,7 @@ fun LogLayout(
     var showContent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(400) // Let screen animation complete
+        delay(200) // Let screen animation complete
         showContent = true
     }
     LaunchedEffect(logEntries.size) {
