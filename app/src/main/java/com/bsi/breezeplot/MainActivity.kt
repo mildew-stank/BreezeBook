@@ -5,9 +5,6 @@
 //  Add an option to enable a foreground service. This would allow increased Trip Meter accuracy,
 //   enable reliable Barometer auto-logging, and an anchor alarm.
 //  Add divider to Log for separating trip segments.
-//  +Little more testing for trip meter.
-//  +Make sure the barometer readings made with screen off before it goes to sleep are good.
-//  ++Smooth out log page animations again, this time without such a large wait for them to appear.
 
 package com.bsi.breezeplot
 

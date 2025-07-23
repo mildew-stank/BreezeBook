@@ -24,8 +24,6 @@ import java.time.Instant
 
 object BarometerPrefs {
     const val MAX_HISTORY_ITEMS = 6
-    const val EXPIRY_HOURS = 6L
-    const val AUTO_LOG_MINUTES = 1L
     val INSTANT = List(MAX_HISTORY_ITEMS) { i -> longPreferencesKey("instant_$i") }
     val PRESSURE = List(MAX_HISTORY_ITEMS) { i -> floatPreferencesKey("pressure_$i") }
 }
@@ -51,7 +49,8 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
     val pressureHistory = _pressureHistory.asStateFlow()
 
     val maxHistoryItems = BarometerPrefs.MAX_HISTORY_ITEMS
-    val expiryHours = BarometerPrefs.EXPIRY_HOURS
+    val expiryHours = 6L
+    val autoLogMinutes = 30L
 
     init {
         if (_hasBarometer.value) {
@@ -64,7 +63,7 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             val prefs = dataStore.data.first()
             val now = Instant.now()
-            val tooOld = Duration.ofHours(BarometerPrefs.EXPIRY_HOURS)
+            val tooOld = Duration.ofHours(expiryHours)
             val list = mutableListOf<Pair<Instant, Float>>()
             for (i in 0 until BarometerPrefs.MAX_HISTORY_ITEMS) {
                 prefs[BarometerPrefs.INSTANT[i]]?.let { timestamp ->
@@ -95,7 +94,7 @@ class BarometerViewModel(application: Application) : AndroidViewModel(applicatio
         }
         val lastLog = _pressureHistory.value.firstOrNull()?.first
         val now = Instant.now()
-        val autoLogTimer = Duration.ofMinutes(BarometerPrefs.AUTO_LOG_MINUTES)
+        val autoLogTimer = Duration.ofMinutes(autoLogMinutes)
 
         if (lastLog == null || Duration.between(lastLog, now) >= autoLogTimer) {
             val ageMillis = (SystemClock.elapsedRealtimeNanos() - timestamp) / 1_000_000L

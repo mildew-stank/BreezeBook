@@ -19,13 +19,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bsi.breezeplot.ui.components.MainTemplate
 import com.bsi.breezeplot.ui.components.PinDialog
-import com.bsi.breezeplot.utilities.distanceToNauticalMiles
-import com.bsi.breezeplot.utilities.doubleToDMS
-import com.bsi.breezeplot.utilities.speedToKnots
 import com.bsi.breezeplot.utilities.toRgbHexString
 import com.bsi.breezeplot.viewmodels.AppTheme
+import com.bsi.breezeplot.viewmodels.FormattedLogEntry
 import com.bsi.breezeplot.viewmodels.GpsViewModel
-import com.bsi.breezeplot.viewmodels.LogEntry
 import com.bsi.breezeplot.viewmodels.LogViewModel
 import com.bsi.breezeplot.viewmodels.SettingsViewModel
 import kotlinx.coroutines.delay
@@ -38,7 +35,6 @@ import org.ramani.compose.MapLibre
 import org.ramani.compose.MapProperties
 import org.ramani.compose.Polyline
 import org.ramani.compose.UiSettings
-import java.util.Locale
 
 @Composable
 fun ChartScreen(
@@ -50,7 +46,7 @@ fun ChartScreen(
     val gpsUiState by gpsViewModel.uiState.collectAsState()
     //val showInfoDialog = remember { mutableStateOf(false) }
     val logEntries by logViewModel.persistedLogEntries.collectAsState()
-    var selectedEntry by remember { mutableStateOf<LogEntry?>(null) }
+    var selectedEntry by remember { mutableStateOf<FormattedLogEntry?>(null) }
     val cameraPosition = rememberSaveable {
         mutableStateOf(
             CameraPosition(
@@ -61,7 +57,7 @@ fun ChartScreen(
     var showContent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(200)
+        delay(400)
         showContent = true
     }
     MainTemplate(showButtons = false)
@@ -97,7 +93,7 @@ fun ChartScreen(
                     center = LatLng(entry.latitude, entry.longitude),
                     radius = 20.0f,
                     opacity = 0.0f,
-                    onClick = { selectedEntry = entry },
+                    onClick = { selectedEntry = logViewModel.getFormattedLogById(entry.id) },
                 )
                 Circle(
                     center = LatLng(entry.latitude, entry.longitude),
@@ -120,23 +116,17 @@ fun ChartScreen(
             items = listOf(
                 "Date" to entry.date,
                 "Time" to entry.time,
-                "Speed" to String.format(
-                    Locale.getDefault(), "%.1fkn", speedToKnots(entry.speed)
-                ),
-                "Heading" to String.format(
-                    Locale.getDefault(), "%.1f°", entry.bearing
-                ),
-                "Latitude" to doubleToDMS(entry.latitude, true),
-                "Longitude" to doubleToDMS(entry.longitude, false),
-                "Segment" to String.format(
-                    Locale.getDefault(), "%.2fNM", distanceToNauticalMiles(entry.distance)
-                ),
+                "Speed" to entry.speed,
+                "Heading" to entry.bearing,
+                "Latitude" to entry.latitude,
+                "Longitude" to entry.longitude,
+                "Segment" to entry.segmentDistance
             ),
             onConfirm = { selectedEntry = null },
             onDismiss = { selectedEntry = null },
             actionButtonText = "Delete",
             onAction = {
-                logViewModel.deleteLogEntry(entry)
+                logViewModel.deleteLogById(entry.id)
                 selectedEntry = null
             })
     }

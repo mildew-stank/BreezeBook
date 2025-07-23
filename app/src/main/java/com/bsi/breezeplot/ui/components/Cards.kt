@@ -33,11 +33,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.bsi.breezeplot.viewmodels.LogEntry
-import com.bsi.breezeplot.utilities.distanceToNauticalMiles
-import com.bsi.breezeplot.utilities.doubleToDMS
-import com.bsi.breezeplot.utilities.speedToKnots
-import java.util.Locale
+import com.bsi.breezeplot.viewmodels.FormattedLogEntry
 
 @Composable
 fun TitleCard(
@@ -151,15 +147,7 @@ fun TitledBorder(
 }
 
 @Composable
-fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry) {
-    val locale = Locale.getDefault()
-    val latitude = remember(entry.latitude) { doubleToDMS(entry.latitude, true) }
-    val longitude = remember(entry.longitude) { doubleToDMS(entry.longitude, false) }
-    val speed = remember(entry.speed) { String.format(locale, "%.1fkn", speedToKnots(entry.speed)) }
-    val bearing = remember(entry.bearing) { String.format(locale, "%.1f°", entry.bearing) }
-    val distance = remember(entry.distance) {
-        String.format(locale, "%.2fNM", distanceToNauticalMiles(entry.distance))
-    }
+fun LogEntryCard(modifier: Modifier = Modifier, entry: FormattedLogEntry) {
     val pad = 12.dp
 
     Card(
@@ -207,25 +195,12 @@ fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry) {
         ) {
             Column(modifier = Modifier) {
                 Text(
-                    text = latitude,
+                    text = entry.latitude,
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = longitude,
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            VerticalDivider()
-            Column(modifier = Modifier) {
-                Text(
-                    text = speed,
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
-                    text = bearing,
+                    text = entry.longitude,
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -233,7 +208,20 @@ fun LogEntryCard(modifier: Modifier = Modifier, entry: LogEntry) {
             VerticalDivider()
             Column(modifier = Modifier) {
                 Text(
-                    text = distance,
+                    text = entry.speed,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = entry.bearing,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            VerticalDivider()
+            Column(modifier = Modifier) {
+                Text(
+                    text = entry.segmentDistance,
                     color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodySmall
                 )

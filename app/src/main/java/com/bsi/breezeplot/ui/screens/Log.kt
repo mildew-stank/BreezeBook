@@ -35,26 +35,21 @@ import com.bsi.breezeplot.ui.components.LogEntryCard
 import com.bsi.breezeplot.ui.components.MainTemplate
 import com.bsi.breezeplot.ui.components.SwipeItem
 import com.bsi.breezeplot.utilities.DATE_FORMAT
-import com.bsi.breezeplot.utilities.distanceToNauticalMiles
-import com.bsi.breezeplot.utilities.doubleToDMS
-import com.bsi.breezeplot.utilities.speedToKnots
 import com.bsi.breezeplot.viewmodels.FormattedLogEntry
 import com.bsi.breezeplot.viewmodels.GpsViewModel
-import com.bsi.breezeplot.viewmodels.LogEntry
 import com.bsi.breezeplot.viewmodels.LogViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
-import java.util.Locale
 
 @Composable
 private fun LogEntryItem(
-    modifier: Modifier, entry: LogEntry, onSwipeDismiss: (LogEntry) -> Unit
+    modifier: Modifier, entry: FormattedLogEntry, onSwipeDismiss: (String) -> Unit
 ) {
     Box(modifier = modifier) {
-        SwipeItem(swipeAction = { onSwipeDismiss(entry) }) {
+        SwipeItem(swipeAction = { onSwipeDismiss(entry.id) }) {
             LogEntryCard(
                 entry = entry, modifier = Modifier.padding(horizontal = 12.dp)
             )
@@ -65,9 +60,9 @@ private fun LogEntryItem(
 @Composable
 fun LogList(
     listState: LazyListState,
-    logEntries: List<LogEntry>,
+    logEntries: List<FormattedLogEntry>,
     visible: Boolean,
-    onSwipeDismiss: (LogEntry) -> Unit
+    onSwipeDismiss: (String) -> Unit
 ) {
     AnimatedVisibility(
         visible = visible, enter = fadeIn(), exit = ExitTransition.None
@@ -91,7 +86,6 @@ fun LogScreen(gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewMod
     val gpsUiState by gpsViewModel.uiState.collectAsState()
     val showClearDialog = remember { mutableStateOf(false) }
     val showExportDialog = remember { mutableStateOf(false) }
-    val logEntries by logViewModel.persistedLogEntries.collectAsState()
     val formattedLogEntries by logViewModel.formattedLogEntries.collectAsState()
     val context = LocalContext.current
     val coroutineScope: CoroutineScope = rememberCoroutineScope()
@@ -112,14 +106,14 @@ fun LogScreen(gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewMod
     LogLayout(
         gpsUiState.hasGpsAccuracy,
         { showExportDialog.value = true },
-        { logViewModel.deleteLogEntry(it) },
+        { logViewModel.deleteLogById(it) },
         {
             logViewModel.addLogEntry(
                 gpsUiState.latitude, gpsUiState.longitude, gpsUiState.speed, gpsUiState.bearing
             )
         },
         { showClearDialog.value = true },
-        logEntries
+        formattedLogEntries
     )
     if (showClearDialog.value) {
         ConfirmationDialog(
@@ -143,17 +137,17 @@ fun LogScreen(gpsViewModel: GpsViewModel = viewModel(), logViewModel: LogViewMod
 fun LogLayout(
     hasGpsAccuracy: Boolean = true,
     onPressExport: () -> Unit = {},
-    onSwipeDismiss: (LogEntry) -> Unit = {},
+    onSwipeDismiss: (String) -> Unit = {},
     onPressAdd: () -> Unit = {},
     onPressClear: () -> Unit = {},
-    logEntries: List<LogEntry> = emptyList()
+    logEntries: List<FormattedLogEntry> = emptyList()
 ) {
     val listState = rememberLazyListState()
     var previousSize by remember { mutableIntStateOf(logEntries.size) }
     var showContent by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(200) // Let screen animation complete
+        delay(400) // Let screen animation complete
         showContent = true
     }
     LaunchedEffect(logEntries.size) {

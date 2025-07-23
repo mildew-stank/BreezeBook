@@ -5,26 +5,17 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.Dao
-import androidx.room.Database
-import androidx.room.Delete
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
-import androidx.room.Room
-import androidx.room.RoomDatabase
+import com.bsi.breezeplot.repository.AppDatabase
+import com.bsi.breezeplot.repository.LogEntry
+import com.bsi.breezeplot.repository.LogRepository
 import com.bsi.breezeplot.utilities.DATE_FORMAT
 import com.bsi.breezeplot.utilities.TIME_FORMAT
 import com.bsi.breezeplot.utilities.distanceToNauticalMiles
 import com.bsi.breezeplot.utilities.doubleToDMS
 import com.bsi.breezeplot.utilities.speedToKnots
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -34,10 +25,9 @@ import java.io.OutputStreamWriter
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.Locale
-import java.util.UUID
 
 data class FormattedLogEntry(
-    //val id: Long,
+    val id: String,
     val date: String,
     val time: String,
     val latitude: String,
@@ -46,73 +36,6 @@ data class FormattedLogEntry(
     val bearing: String,
     val segmentDistance: String
 )
-
-@Entity(tableName = "log_entries")
-data class LogEntry(
-    val latitude: Double,
-    val longitude: Double,
-    val speed: Float,
-    val bearing: Float,
-    val time: String,
-    val date: String,
-    var distance: Float = 0f,
-    val timestamp: Long = System.currentTimeMillis(),
-    @PrimaryKey val id: String = UUID.randomUUID().toString(),
-)
-
-@Dao
-interface LogEntryDao {
-    @Query("SELECT * FROM log_entries ORDER BY timestamp DESC")
-    fun getAllLogEntries(): Flow<List<LogEntry>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertLogEntry(logEntry: LogEntry)
-
-    @Delete
-    suspend fun deleteLogEntry(logEntry: LogEntry)
-
-    @Query("DELETE FROM log_entries")
-    suspend fun clearAllLogEntries()
-
-    @Query("SELECT * FROM log_entries WHERE id = :id")
-    suspend fun getLogEntryById(id: String): LogEntry?
-}
-
-class LogRepository(private val logEntryDao: LogEntryDao) {
-    val allLogEntries: Flow<List<LogEntry>> = logEntryDao.getAllLogEntries()
-
-    suspend fun insert(logEntry: LogEntry) {
-        logEntryDao.insertLogEntry(logEntry)
-    }
-
-    suspend fun delete(logEntry: LogEntry) {
-        logEntryDao.deleteLogEntry(logEntry)
-    }
-
-    suspend fun clearAll() {
-        logEntryDao.clearAllLogEntries()
-    }
-}
-
-@Database(entities = [LogEntry::class], version = 1, exportSchema = false)
-abstract class AppDatabase : RoomDatabase() {
-    abstract fun logEntryDao(): LogEntryDao
-
-    companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
-
-        fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext, AppDatabase::class.java, "log_database"
-                ).fallbackToDestructiveMigration(true).build()
-                INSTANCE = instance
-                instance
-            }
-        }
-    }
-}
 
 class LogViewModel(application: Application) : AndroidViewModel(application) {
     private val logRepository: LogRepository
@@ -157,6 +80,7 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
                 time = currentTime.format(TIME_FORMAT),
                 date = currentTime.format(DATE_FORMAT),
             )
+
             logRepository.insert(newEntry)
         }
     }
@@ -173,9 +97,29 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun deleteLogById(id: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val logEntry = logRepository.getLogEntryById(id)
+
+            if (logEntry != null) {
+                logRepository.delete(logEntry)
+            }
+        }
+    }
+
+    fun getLogById(id: String): LogEntry? {
+        return persistedLogEntries.value.find { it.id == id }
+    }
+
+    fun getFormattedLogById(id: String): FormattedLogEntry? {
+        return formattedLogEntries.value.find { it.id == id }
+    }
+
     private fun formatLogEntry(entry: LogEntry): FormattedLogEntry {
         val locale = Locale.getDefault()
+
         return FormattedLogEntry(
+            id = entry.id,
             date = entry.date,
             time = entry.time,
             latitude = doubleToDMS(entry.latitude, true),
@@ -207,26 +151,13 @@ class LogViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun exportLogbook(context: Context, uri: Uri): Boolean {
-        val csvData = logToCSV()
+        val csvData = logRepository.logToCsv()
+
         return if (csvData.isNotEmpty()) {
             tryWriteCsvToUri(uri, csvData, context)
         } else {
             false
         }
-    }
-
-    suspend fun logToCSV(): String {
-        val logEntries = logRepository.allLogEntries.first()
-        if (logEntries.isEmpty()) {
-            return ""
-        }
-        val stringBuilder = StringBuilder()
-
-        stringBuilder.append("latitude,longitude,speed,bearing,time,date,trip\n")
-        logEntries.forEach { entry ->
-            stringBuilder.append("${entry.latitude},${entry.longitude},${entry.speed},${entry.bearing},\"${entry.time}\",\"${entry.date}\",${entry.distance}\n")
-        }
-        return stringBuilder.toString()
     }
 
     suspend fun tryWriteCsvToUri(uri: Uri, csvData: String, context: Context): Boolean {

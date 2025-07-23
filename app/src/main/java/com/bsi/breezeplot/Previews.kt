@@ -9,9 +9,7 @@ import com.bsi.breezeplot.ui.screens.LogLayout
 import com.bsi.breezeplot.ui.screens.SettingsLayout
 import com.bsi.breezeplot.ui.theme.BreezePlotTheme
 import com.bsi.breezeplot.utilities.doubleToDMS
-import com.bsi.breezeplot.viewmodels.LogEntry
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
+import com.bsi.breezeplot.viewmodels.FormattedLogEntry
 
 @Preview
 @Composable
@@ -25,24 +23,24 @@ fun DashboardPreview() {
 @Composable
 fun LogPreview() {
     val mockList = listOf(
-        LogEntry(
-            timestamp = ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond(),
-            latitude = 37.0522,
-            longitude = -108.2437,
-            speed = 15.5f,
-            bearing = 180.0f,
+        FormattedLogEntry(
+            latitude = "37.0522",
+            longitude = "-108.2437",
+            speed = "15.5",
+            bearing = "180.0f",
             time = "17:32:22",
             date = "27/06/2025",
-            id = "1"
-        ), LogEntry(
-            timestamp = ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond(),
-            latitude = 34.0522,
-            longitude = -118.2437,
-            speed = 15.5f,
-            bearing = 180.0f,
+            id = "1",
+            segmentDistance = "102.11NM"
+        ), FormattedLogEntry(
+            latitude = "34.0522",
+            longitude = "-118.2437",
+            speed = "15.5f",
+            bearing = "180.0",
             time = "17:32:22",
             date = "27/06/2025",
-            id = "2"
+            id = "2",
+            segmentDistance = "43.24NM"
         )
     )
     BreezePlotTheme { LogLayout(logEntries = mockList) }
@@ -52,15 +50,15 @@ fun LogPreview() {
 @Composable
 fun LogEntryPreview() {
     BreezePlotTheme {
-        val mockLogEntry = LogEntry(
-            timestamp = ZonedDateTime.now(ZoneOffset.UTC).toEpochSecond(),
-            latitude = 34.0522,
-            longitude = -118.2437,
-            speed = 15.5f,
-            bearing = 180.0f,
-            distance = 140.0f,
+        val mockLogEntry = FormattedLogEntry(
+            latitude = "37.0522",
+            longitude = "-108.2437",
+            speed = "15.5",
+            bearing = "180.0f",
             time = "17:32:22",
-            date = "27/06/2025"
+            date = "27/06/2025",
+            id = "1",
+            segmentDistance = "102.11NM"
         )
         LogEntryCard(entry = mockLogEntry)
     }
