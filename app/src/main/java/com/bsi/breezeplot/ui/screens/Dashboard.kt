@@ -40,6 +40,10 @@ import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.Locale
 
+private enum class ActiveDialog {
+    BAROMETER, TRIP, SETTINGS
+}
+
 private fun formatChronometer(color: Color, zonedDateTime: ZonedDateTime): AnnotatedString {
     val format = buildAnnotatedString {
         withStyle(style = SpanStyle(color = color, fontSize = 18.sp)) {
@@ -49,27 +53,30 @@ private fun formatChronometer(color: Color, zonedDateTime: ZonedDateTime): Annot
             append(zonedDateTime.format(TIME_FORMAT))
         }
     }
+
     return format
 }
 
-private fun formatBarometer(locale: Locale, pressure: Float): AnnotatedString {
+private fun formatBarometer(pressure: Float): AnnotatedString {
     val format = buildAnnotatedString {
-        append(String.format(locale, "%.1f", pressure))
+        append(String.format(Locale.getDefault(), "%.1f", pressure))
         withStyle(style = SpanStyle(fontSize = 18.sp)) { append("mb") }
     }
+
     return format
 }
 
-private fun formatSpeed(locale: Locale, speed: Float): AnnotatedString {
+private fun formatSpeed(speed: Float): AnnotatedString {
     val format = buildAnnotatedString {
-        append(String.format(locale, "%.1f", speedToKnots(speed)))
+        append(String.format(Locale.getDefault(), "%.1f", speedToKnots(speed)))
         withStyle(style = SpanStyle(fontSize = 18.sp)) { append("kn") }
     }
+
     return format
 }
 
-private fun formatHeading(locale: Locale, heading: Float): String {
-    return String.format(locale, "%.1f°", heading)
+private fun formatHeading(heading: Float): String {
+    return String.format(Locale.getDefault(), "%.1f°", heading)
 }
 
 private fun formatCoordinates(latitude: Double, longitude: Double): String {
@@ -77,11 +84,12 @@ private fun formatCoordinates(latitude: Double, longitude: Double): String {
 
 }
 
-private fun formatTripMeter(locale: Locale, trip: Float): AnnotatedString {
+private fun formatTripMeter(trip: Float): AnnotatedString {
     val format = buildAnnotatedString {
-        append(String.format(locale, "%.1f", distanceToNauticalMiles(trip)))
+        append(String.format(Locale.getDefault(), "%.1f", distanceToNauticalMiles(trip)))
         withStyle(style = SpanStyle(fontSize = 18.sp)) { append("NM") }
     }
+
     return format
 }
 
@@ -89,9 +97,9 @@ private fun formatPressureHistory(
     pressureHistory: List<Pair<Instant, Float>>, expirationHour: Long, maxItems: Int
 ): List<Pair<String, String>> {
     val now = Instant.now()
-    val tooLate = Duration.ofHours(expirationHour)
+    val expiry = Duration.ofHours(expirationHour)
     val itemsToDisplay = pressureHistory.filter { (instant, _) ->
-        Duration.between(instant, now) < tooLate
+        Duration.between(instant, now) < expiry
     }.map { (instant, pressure) ->
         val age = Duration.between(instant, now)
         val hours = age.toHours()
@@ -120,56 +128,58 @@ fun DashboardScreen(
     val hasBarometerAccuracy by barometerViewModel.hasAccuracy.collectAsState()
     val currentPressure by barometerViewModel.currentPressure.collectAsState()
     val pressureHistory by barometerViewModel.pressureHistory.collectAsState()
-    val locale = Locale.getDefault()
     val dateColor = MaterialTheme.colorScheme.secondary
-    val showBarometerDialog = remember { mutableStateOf(false) }
-    val showTripDialog = remember { mutableStateOf(false) }
-    val showSettingsDialog = remember { mutableStateOf(false) }
+    val activeDialog = remember { mutableStateOf<ActiveDialog?>(null) }
 
     // Main page
     DashboardLayout(
         navController,
-        { showBarometerDialog.value = true },
-        { showTripDialog.value = true },
-        { showSettingsDialog.value = true },
+        onPressBarometer = { activeDialog.value = ActiveDialog.BAROMETER },
+        onPressTripMeter = { activeDialog.value = ActiveDialog.TRIP },
+        onPressSettings = { activeDialog.value = ActiveDialog.SETTINGS },
         gpsUiState.hasGpsAccuracy,
         gpsUiState.hasClusterAccuracy,
         hasBarometer,
         hasBarometerAccuracy,
         formatChronometer(dateColor, utcTime),
-        formatBarometer(locale, currentPressure),
-        formatSpeed(locale, gpsUiState.speed),
-        formatHeading(locale, gpsUiState.bearing),
+        formatBarometer(currentPressure),
+        formatSpeed(gpsUiState.speed),
+        formatHeading(gpsUiState.bearing),
         formatCoordinates(gpsUiState.latitude, gpsUiState.longitude),
-        formatTripMeter(locale, gpsUiState.tripDistance)
+        formatTripMeter(gpsUiState.tripDistance)
     )
     // Dialog boxes
-    if (showBarometerDialog.value) {
-        PinDialog(
+    when (activeDialog.value) {
+        ActiveDialog.BAROMETER -> PinDialog(
             items = formatPressureHistory(
-            pressureHistory, barometerViewModel.expiryHours, barometerViewModel.maxHistoryItems
-        ),
-            onConfirm = { showBarometerDialog.value = false },
-            onDismiss = { showBarometerDialog.value = false },
+                pressureHistory, barometerViewModel.expiryHours, barometerViewModel.maxHistoryItems
+            ),
+            onConfirm = { activeDialog.value = null },
+            onDismiss = { activeDialog.value = null },
             onAction = {
                 barometerViewModel.addPressureReadingToHistory(currentPressure)
-                showBarometerDialog.value = false
+                activeDialog.value = null
             },
             actionButtonText = "Add entry"
         )
-    } else if (showTripDialog.value) {
-        ConfirmationDialog(
+
+        ActiveDialog.TRIP -> ConfirmationDialog(
             dialogText = "Are you sure you want to reset trip distance?",
             onConfirm = {
                 gpsViewModel.resetDistance()
-                showTripDialog.value = false
+                activeDialog.value = null
             },
-            onDismiss = { showTripDialog.value = false })
-    } else if (showSettingsDialog.value) {
-        ConfirmationDialog(dialogText = "Open settings menu?", onConfirm = {
-            navController.navigate(AppDestinations.SETTINGS_ROUTE)
-            showSettingsDialog.value = false
-        }, onDismiss = { showSettingsDialog.value = false })
+            onDismiss = { activeDialog.value = null })
+
+        ActiveDialog.SETTINGS -> ConfirmationDialog(
+            dialogText = "Open settings menu?",
+            onConfirm = {
+                navController.navigate(AppDestinations.SETTINGS_ROUTE)
+                activeDialog.value = null
+            },
+            onDismiss = { activeDialog.value = null })
+
+        null -> {}
     }
 }
 

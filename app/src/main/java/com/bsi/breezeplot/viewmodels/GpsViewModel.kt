@@ -108,6 +108,7 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateLocationData(currentLocation: Location) {
         if (!currentLocation.hasAccuracy() && currentLocation.accuracy > 30.86f) { // 1 arc second
+            _uiState.value = _uiState.value.copy(hasGpsAccuracy = false, hasClusterAccuracy = false)
             return
         }
         val inMotion = currentLocation.hasSpeed() && currentLocation.speed >= 0.51f

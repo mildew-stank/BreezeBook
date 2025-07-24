@@ -34,9 +34,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private var _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    //private val _utcTime = MutableStateFlow(ZonedDateTime.now(ZoneOffset.UTC))
-    //val utcTime: StateFlow<ZonedDateTime> = _utcTime.asStateFlow()
-
     companion object {
         private val KEEP_SCREEN_ON_KEY = booleanPreferencesKey("keep_screen_on")
         private val RUN_IN_BACKGROUND_KEY = booleanPreferencesKey("run_in_background")
@@ -50,7 +47,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private fun loadSettings() {
         viewModelScope.launch {
             val preferences = getApplication<Application>().dataStore.data.first()
-
             val keepScreenOn = preferences[KEEP_SCREEN_ON_KEY] == true
             val runInBackground = preferences[RUN_IN_BACKGROUND_KEY] == true
             val themeString = preferences[SELECTED_THEME_KEY] ?: AppTheme.CALM_WATER.name
@@ -74,6 +70,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun saveSettings() {
         viewModelScope.launch {
             val currentState = _uiState.value
+
             getApplication<Application>().dataStore.edit { preferences ->
                 preferences[KEEP_SCREEN_ON_KEY] = currentState.keepScreenOn
                 preferences[RUN_IN_BACKGROUND_KEY] = currentState.runInBackground
