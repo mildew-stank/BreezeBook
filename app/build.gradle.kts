@@ -39,6 +39,8 @@ android {
 }
 
 dependencies {
+    //implementation(libs.kotlinx.coroutines.play.services)
+    //implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.room.compiler)
     implementation(libs.ramani.maplibre)
