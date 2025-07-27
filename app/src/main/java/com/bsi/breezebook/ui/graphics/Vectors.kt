@@ -37,7 +37,7 @@ fun GenerateWavyLines(
     var currentY = (validNumberOfLines - 1) * 33.87f + 25.4f
 
     if (validNumberOfLines > 0) {
-        for (i in 0 until validNumberOfLines) {
+        repeat(validNumberOfLines) {
             yCoordinates.add(currentY)
             currentY -= 33.87f
         }
@@ -184,33 +184,3 @@ fun FilledWave(modifier: Modifier = Modifier) {
         modifier = modifier
     )
 }
-
-val wavyLinesExtended = ImageVector.Builder(
-    name = "WavyLinesExtended",
-    defaultWidth = 1024.dp,
-    defaultHeight = 640.07.dp,
-    viewportWidth = 270.93f,
-    viewportHeight = 169.35f
-).apply {
-    listOf(160.88f, 127.01f, 93.14f, 59.27f, 25.4f).forEach { y ->
-        path(
-            fill = SolidColor(Color(0x00000000)),
-            stroke = SolidColor(Color(0xFF000000)),
-            strokeLineWidth = 1f,
-            strokeLineCap = Round,
-            strokeLineJoin = StrokeJoin.Companion.Round,
-            strokeLineMiter = 4.0f,
-            pathFillType = NonZero
-        ) {
-            moveToRelative(0.0f, y)
-            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
-            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
-            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
-            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
-            curveToRelative(16.93f, 0.0f, 25.4f, -16.93f, 33.87f, -16.93f)
-            curveToRelative(8.47f, 0.0f, 16.93f, 16.93f, 33.87f, 16.93f)
-            reflectiveCurveToRelative(25.4f, -16.93f, 33.87f, -16.93f)
-            curveToRelative(8.47f, 0.0f, 18.63f, 16.6f, 33.87f, 16.93f)
-        }
-    }
-}.build()
