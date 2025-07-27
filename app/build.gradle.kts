@@ -6,10 +6,10 @@ plugins {
 }
 
 android {
-    namespace = "com.bsi.breezeplot"
+    namespace = "com.bsi.breezebook"
     compileSdk = 35
     defaultConfig {
-        applicationId = "com.bsi.breezeplot"
+        applicationId = "com.bsi.breezebook"
         minSdk = 29
         targetSdk = 35
         versionCode = 1

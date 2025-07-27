@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BreezePlot"
+rootProject.name = "BreezeBook"
 include(":app")
  

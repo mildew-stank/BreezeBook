@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="BreezePlot.app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-07-22T21:09:18.490576300Z">
+        <DropdownSelection timestamp="2025-07-27T01:17:37.167714700Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R9TX206X3EJ" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\BLOOD-BATH\.android\avd\Medium_Phone.avd" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -17,6 +17,9 @@
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
       <SelectionState runConfigName="DropdownPreview">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="BreezeBook.app">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

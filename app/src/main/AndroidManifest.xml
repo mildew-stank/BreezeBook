@@ -15,7 +15,7 @@
         android:theme="@style/Theme.BreezePlot"
         tools:targetApi="31">
         <activity
-            android:name="com.bsi.breezeplot.MainActivity"
+            android:name="com.bsi.breezebook.MainActivity"
             android:exported="true"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.BreezePlot">
