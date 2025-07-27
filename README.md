@@ -1,5 +1,5 @@
 # About
-This is a marine logbook and navigation aid, made for Android with Kotlin and Jetpack Compose. It uses [Ramani-Maps](https://github.com/ramani-maps/ramani-maps) and [Natural Earth](https://www.naturalearthdata.com/) data.
+This is a maritime logbook and navigation aid, made for Android with Kotlin and Jetpack Compose. It uses [Ramani-Maps](https://github.com/ramani-maps/ramani-maps) and [Natural Earth](https://www.naturalearthdata.com/) data.
 
 # Usage
 Track coordinates, heading, speed, distance traveled, and UTC at a glance on the dashboard. Open the log to add it all to the book, and export to csv when the voyage is through. Have a look at the chart to see all your logs pinned to the world map.
