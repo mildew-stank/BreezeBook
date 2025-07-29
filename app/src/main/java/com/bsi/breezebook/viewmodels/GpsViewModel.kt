@@ -123,6 +123,8 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
                 tripDistance += distanceMoved
                 previousLocation = currentLocation
             }
+        } else {
+            previousLocation = currentLocation
         }
         _uiState.value = _uiState.value.copy(
             hasGpsAccuracy = true,

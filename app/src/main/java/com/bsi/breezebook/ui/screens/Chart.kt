@@ -84,7 +84,7 @@ fun ChartScreen(
                 rotateGesturesEnabled = false,
                 tiltGesturesEnabled = false,
                 isLogoEnabled = false, // Works on my android 14, but not 13 or 16
-                logoMargins = Margins(bottom = -128) // So force it below screen
+                logoMargins = Margins(bottom = -1280) // So force it below screen for 13
             ),
             properties = MapProperties(maxZoom = 12.0)
         ) {
