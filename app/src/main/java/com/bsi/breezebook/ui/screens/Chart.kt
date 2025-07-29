@@ -33,6 +33,7 @@ import org.ramani.compose.Circle
 import org.ramani.compose.LocationStyling
 import org.ramani.compose.MapLibre
 import org.ramani.compose.MapProperties
+import org.ramani.compose.Margins
 import org.ramani.compose.Polyline
 import org.ramani.compose.UiSettings
 
@@ -76,13 +77,14 @@ fun ChartScreen(
             cameraPosition = cameraPosition.value,
             locationStyling = LocationStyling(
                 foregroundTintColor = MaterialTheme.colorScheme.primary.toArgb(),
-                backgroundTintColor = MaterialTheme.colorScheme.secondary.toArgb(),
+                backgroundTintColor = MaterialTheme.colorScheme.secondary.toArgb()
             ),
             uiSettings = UiSettings(
                 isAttributionEnabled = false,
                 rotateGesturesEnabled = false,
                 tiltGesturesEnabled = false,
-                isLogoEnabled = false,
+                isLogoEnabled = false, // Works on my android 14, but not 13 or 16
+                logoMargins = Margins(bottom = -128) // So force it below screen
             ),
             properties = MapProperties(maxZoom = 12.0)
         ) {
