@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bsi.breezebook.repository.LogEntry
+import com.bsi.breezebook.ui.components.ChartTutorial
 import com.bsi.breezebook.ui.components.MainTemplate
 import com.bsi.breezebook.ui.components.PinDialog
 import com.bsi.breezebook.utilities.toRgbHexString
@@ -112,6 +113,9 @@ fun ChartScreen(
                     lineWidth = 2f
                 )
             }
+        }
+        if (showContent) {
+            ChartTutorial()
         }
     }
     selectedEntry?.let { entry ->

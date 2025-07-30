@@ -25,6 +25,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.bsi.breezebook.ui.AppDestinations
 import com.bsi.breezebook.ui.components.ConfirmationDialog
+import com.bsi.breezebook.ui.components.DashboardTutorial
 import com.bsi.breezebook.ui.components.MainTemplate
 import com.bsi.breezebook.ui.components.PinDialog
 import com.bsi.breezebook.ui.components.TitleCard
@@ -251,5 +252,6 @@ fun DashboardLayout(
                 dataColor = MaterialTheme.colorScheme.primary
             )
         }
+        DashboardTutorial(hasBarometer)
     }
 }

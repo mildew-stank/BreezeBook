@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bsi.breezebook.ui.components.ConfirmationDialog
 import com.bsi.breezebook.ui.components.LogEntryCard
+import com.bsi.breezebook.ui.components.LogTutorial
 import com.bsi.breezebook.ui.components.MainTemplate
 import com.bsi.breezebook.ui.components.SwipeItem
 import com.bsi.breezebook.utilities.DATE_FORMAT
@@ -167,5 +168,8 @@ fun LogLayout(
         onLongClick = onPressExport
     ) {
         LogList(listState, logEntries, showContent, onSwipeDismiss)
+        if (showContent) {
+            LogTutorial()
+        }
     }
 }
