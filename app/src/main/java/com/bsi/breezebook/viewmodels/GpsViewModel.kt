@@ -4,10 +4,8 @@ import android.Manifest
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
-import android.location.GnssStatus
 import android.location.Location
 import android.location.LocationManager
-import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
@@ -17,11 +15,17 @@ import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.bsi.breezebook.dataStore
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -48,6 +52,7 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
     private val dataStore: DataStore<Preferences> = application.dataStore
     private val locationManager =
         application.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(application)
 
     private val _uiState = MutableStateFlow(GpsUiState())
     val uiState: StateFlow<GpsUiState> = _uiState.asStateFlow()
@@ -55,24 +60,21 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
     private val _utcTime = MutableStateFlow(ZonedDateTime.now(ZoneOffset.UTC))
     val utcTime: StateFlow<ZonedDateTime> = _utcTime.asStateFlow()
 
-    private val gnssStatusCallback = object : GnssStatus.Callback() {
-        override fun onStopped() {
-            _uiState.value = _uiState.value.copy(hasGpsAccuracy = false)
+    private val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(locationResult: LocationResult) {
+            locationResult.lastLocation?.let { location ->
+                updateLocationData(location)
+            }
         }
     }
 
     init {
-        if (ContextCompat.checkSelfPermission(
-                application, Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            locationManager.registerGnssStatusCallback(
-                gnssStatusCallback, Handler(Looper.getMainLooper())
-            )
-        }
         viewModelScope.launch {
             while (true) {
                 _utcTime.value = ZonedDateTime.now(ZoneOffset.UTC)
+                if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    _uiState.update { it.copy(hasGpsAccuracy = false, hasClusterAccuracy = false) }
+                }
                 delay(1000)
             }
         }
@@ -94,6 +96,27 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun startLocationUpdates() {
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000).apply {
+            setMinUpdateIntervalMillis(5000)
+            setWaitForAccurateLocation(true)
+        }.build()
+
+        if (ContextCompat.checkSelfPermission(
+                getApplication(), Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest, locationCallback, Looper.getMainLooper()
+            )
+        }
+    }
+
+    //fun stopLocationUpdates() {
+    //    fusedLocationClient.removeLocationUpdates(locationCallback)
+    //    _uiState.update { it.copy(hasGpsAccuracy = false, hasClusterAccuracy = false) }
+    //}
+
     fun saveTripData() {
         viewModelScope.launch {
             dataStore.edit { prefs ->
@@ -106,7 +129,7 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun updateLocationData(currentLocation: Location) {
+    private fun updateLocationData(currentLocation: Location) {
         if (!currentLocation.hasAccuracy() && currentLocation.accuracy > 30.86f) { // 1 arc second
             _uiState.value = _uiState.value.copy(hasGpsAccuracy = false, hasClusterAccuracy = false)
             return
@@ -139,6 +162,14 @@ class GpsViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetDistance() {
         _uiState.value = _uiState.value.copy(tripDistance = 0.0f)
+        previousLocation = null
+        viewModelScope.launch {
+            dataStore.edit { prefs ->
+                prefs.remove(DistancePrefs.TOTAL_DISTANCE)
+                prefs.remove(DistancePrefs.LAST_LATITUDE)
+                prefs.remove(DistancePrefs.LAST_LONGITUDE)
+            }
+        }
     }
 
     override fun onCleared() {

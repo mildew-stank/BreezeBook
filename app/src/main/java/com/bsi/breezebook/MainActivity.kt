@@ -11,7 +11,6 @@ package com.bsi.breezebook
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Looper
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -39,17 +38,12 @@ import com.bsi.breezebook.viewmodels.BarometerViewModel
 import com.bsi.breezebook.viewmodels.GpsViewModel
 import com.bsi.breezebook.viewmodels.LogViewModel
 import com.bsi.breezebook.viewmodels.SettingsViewModel
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
-import com.google.android.gms.location.LocationServices
-import com.google.android.gms.location.Priority
 
 class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
             if (isGranted) {
-                requestLocationUpdates()
+                gpsViewModel.startLocationUpdates()
             } else {
                 Toast.makeText(
                     this, "Precise location permission is required", Toast.LENGTH_SHORT
@@ -75,9 +69,6 @@ class MainActivity : ComponentActivity() {
             val settingsState by settingsViewModel.uiState.collectAsState()
 
             splashScreen.setKeepOnScreenCondition { settingsViewModel.isLoading.value }
-            LaunchedEffect(Unit) {
-                requestLocationUpdates()
-            }
             LaunchedEffect(settingsState.keepScreenOn) {
                 if (settingsState.keepScreenOn) {
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -136,38 +127,19 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun requestLocationUpdates() {
-        val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-        var locationCallback = object : LocationCallback() {
-
-            override fun onLocationResult(locationResult: LocationResult) {
-                super.onLocationResult(locationResult)
-                val location = locationResult.lastLocation
-
-                if (location != null) {
-                    gpsViewModel.updateLocationData(location)
-                }
-            }
-        }
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000).apply {
-            setMinUpdateIntervalMillis(5000)
-            setWaitForAccurateLocation(true)
-        }.build()
-
+    private fun requestLocationPermission() {
         if (ActivityCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
-            fusedLocationProviderClient.requestLocationUpdates(
-                locationRequest, locationCallback, Looper.getMainLooper()
-            )
-        } else {
             requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
     override fun onStart() {
         super.onStart()
+        requestLocationPermission()
+        gpsViewModel.startLocationUpdates()
         barometerViewModel.flagEarlyWake()
     }
 
