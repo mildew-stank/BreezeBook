@@ -5,6 +5,7 @@
 //   reliable Barometer auto-logging, and an anchor alarm.
 //  Add divider to Log for separating trip segments.
 //  Add NMEA support for local AIS to Chart.
+//  Localization.
 
 package com.bsi.breezebook
 
